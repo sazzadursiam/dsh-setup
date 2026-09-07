@@ -51,7 +51,7 @@ npm -v
 npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
 ```
 
-`--allow-scripts` অংশটা জরুরি। `node-pty` আর `koffi` native binary বানায়; সেগুলো ছাড়া shell/terminal tool কাজ করবে না।
+`--allow-scripts` অংশটা জরুরি। `node-pty` আর `koffi` native binary বানায়; সেগুলো ছাড়া shell/terminal tool কাজ করবে না। **এটা মুছে ফেলবেন না** — npm ১২ থেকে install scripts ডিফল্টে বন্ধ, তাই এই allowlist ছাড়া native module গুলো বানেই না (error: `Failed to load native module`)।
 
 শুধু টেস্ট করতে চাইলে ইনস্টল ছাড়াই:
 
@@ -102,7 +102,7 @@ Windows-এর Node WSL-এ কাজ করে না, আলাদা লা�
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 source ~/.bashrc
 nvm install --lts
-npm install -g @deepseek-ai/dsh
+npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
 dsh web
 ```
 
