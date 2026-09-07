@@ -1,5 +1,7 @@
 # DeepSeek Harness (dsh) — লোকাল সেটআপ গাইড
 
+> **English:** see [`SETUP.md`](SETUP.md)
+
 **তৈরি:** সেপ্টেম্বর ২০২৬
 **পরিবেশ:** Windows · macOS · Linux/Ubuntu (macOS নির্দেশনা: অংশ ২; Linux Figma সীমাবদ্ধতা: অংশ ৩)
 **অবস্থা:** dsh এখনো developer preview — breaking change আসতে পারে
