@@ -246,6 +246,8 @@ taskkill /IM node.exe /F
 
 এজেন্ট দিয়ে Figma-তে ডিজাইন তৈরি, এডিট ও পড়া — সবই dsh থেকে।
 
+> **Platform নিয়ে:** নিচের কমান্ডগুলো Windows/cmd ধরে লেখা। **macOS**-এ নিজের platform-এর setup অংশ ২-তে, **Linux**-এ অংশ ৩-তে। পার্থক্য শুধু কমান্ডের বাকলে — `setx` বনাম `export`, `%USERPROFILE%` বনাম `~`, `Ctrl+/` বনাম `Cmd+/`। টোকেন, স্কোপ, কনফিগের YAML, আর প্লাগইন ইমপোর্টের নিয়ম **সব platform-এ একই**।
+
 ### যা কাজ করে না (সময় নষ্ট করবেন না)
 
 Figma-র অফিশিয়াল রিমোট MCP (`https://mcp.figma.com/mcp`) **dsh-এ চলবে না**। কারণ:
@@ -314,6 +316,13 @@ echo %FIGMA_ACCESS_TOKEN%
 
 টোকেন দেখালে ঠিক আছে। `%FIGMA_ACCESS_TOKEN%` হুবহু ফেরত এলে সেট হয়নি।
 
+**macOS/Linux:** `setx`-এর বদলে `export` (অংশ ২ ধাপ ৩ / অংশ ৩):
+
+```bash
+export FIGMA_ACCESS_TOKEN="figd_..."
+export ENABLE_MCP_APPS=true
+```
+
 npx প্রসেস সিস্টেমের env উত্তরাধিকারসূত্রে পায়, তাই কনফিগে আলাদা করে env লিখতে হয় না।
 
 ### ধাপ ৪: কনফিগ ফাইল
@@ -325,6 +334,13 @@ mkdir "%USERPROFILE%\.dsh\profiles\web" 2>nul
 copy cordis.patch.yml "%USERPROFILE%\.dsh\profiles\web\"
 ```
 
+**macOS/Linux:**
+
+```bash
+mkdir -p ~/.dsh/profiles/web
+cp cordis.patch.yml ~/.dsh/profiles/web/
+```
+
 **ওই ফাইলে আগে থেকে কিছু থাকলে overwrite করবেন না**, হাতে মার্জ করুন।
 
 হাতে করতে চাইলে:
@@ -332,6 +348,8 @@ copy cordis.patch.yml "%USERPROFILE%\.dsh\profiles\web\"
 ```
 notepad %USERPROFILE%\.dsh\profiles\web\cordis.patch.yml
 ```
+
+**macOS/Linux:** `nano ~/.dsh/profiles/web/cordis.patch.yml` (বা যেকোনো editor)।
 
 ফাইলে যদি শুধু `[]` থাকে, সেটা মুছে নিচেরটা বসান (উপরের কমেন্ট লাইনগুলো রেখে দিন):
 
@@ -364,9 +382,11 @@ dsh web
 dir %USERPROFILE%\.figma-console-mcp\plugin
 ```
 
+**macOS/Linux:** `ls ~/.figma-console-mcp/plugin`
+
 `manifest.json`, `code.js`, `ui.html` থাকার কথা।
 
-Figma ডেস্কটপে একটা ফাইল খুলে **`Ctrl+/`** → টাইপ `import` → **Import plugin from manifest…** বেছে নিন।
+Figma ডেস্কটপে একটা ফাইল খুলে **`Ctrl+/`** (**macOS: `Cmd+/`**) → টাইপ `import` → **Import plugin from manifest…** বেছে নিন।
 
 (Tools প্যানেলের Create মেনুতে এই অপশন নেই — ওটা নতুন প্লাগইন বানানোর জন্য। quick actions-ই একমাত্র নির্ভরযোগ্য পথ।)
 
@@ -375,6 +395,8 @@ Figma ডেস্কটপে একটা ফাইল খুলে **`Ctrl+/`
 ```
 %USERPROFILE%\.figma-console-mcp\plugin\manifest.json
 ```
+
+**macOS/Linux:** `~/.figma-console-mcp/plugin/manifest.json`
 
 ইমপোর্টের পর **Figma Desktop Bridge** চালান। প্লাগইন উইন্ডোতে সবুজ **Connected — Connected to 1 AI app** দেখাবে। একবার ইমপোর্ট করলেই যথেষ্ট।
 
@@ -432,12 +454,24 @@ Test AI ফাইলে একটা 200x100 নীল rectangle বানাও
 
 ### প্রতি প্রজেক্টে যা করবেন
 
+**Windows** (cmd):
+
 ```
 mkdir %USERPROFILE%\projects\my-site
 cd %USERPROFILE%\projects\my-site
 git init
 copy %USERPROFILE%\dsh-setup\templates\AGENTS.md .
 REM উপরের পথটা ধরে নিয়েছে dsh-setup রিপোটা %USERPROFILE%-এ clone করা। অন্য জায়গায় থাকলে পথ বদলে নিন।
+```
+
+**macOS/Linux:**
+
+```bash
+mkdir -p ~/projects/my-site
+cd ~/projects/my-site
+git init
+cp ~/dsh-setup/templates/AGENTS.md .
+# উপরের পথটা ধরে নিয়েছে dsh-setup রিপোটা হোম ফোল্ডারে clone করা। অন্য জায়গায় থাকলে পথ বদলে নিন।
 ```
 
 তারপর dsh UI-তে **Choose workspace** দিয়ে ফোল্ডারটা যোগ ও সিলেক্ট করুন। সার্ভার রিস্টার্ট লাগে না।
