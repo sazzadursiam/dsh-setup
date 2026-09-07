@@ -17,6 +17,7 @@ DeepSeek Harness (`dsh`) একটা open-source agent harness — DeepSeek AI-
 গুরুত্বপূর্ণ: **harness লোকাল, মডেল লোকাল নয়।** API কল যাচ্ছে DeepSeek বা Anthropic-এর সার্ভারে।
 
 **রেফারেন্স লিংক**
+
 - সাইট: https://www.deepseek.com/harness/en/
 - GitHub: https://github.com/deepseek-ai/deepseek-harness
 - ডকস: https://deepseek-harness.github.io/deepseek-harness/en/guide/quickstart
@@ -185,7 +186,25 @@ OAuth দেয়াল টপকানোর বদলে পাশ কাট�
 
 figma.com → প্রোফাইল → Settings → Security → Personal access tokens → Generate new token
 
-স্কোপ: `current_user:read`, `file_content:read`, `file_metadata:read`, `file_versions:read`, `file_comments:read`, `file_comments:write`, `library_assets:read`, `library_content:read`, `team_library_content:read`, `file_dev_resources:read`, `file_dev_resources:write`, `folders:read`. Webhooks বাদ।
+Expiration যা খুশি (৯০ দিন ঠিক আছে)। স্কোপগুলো Figma-র স্ক্রিনে যে ক্রমে আসে সেই ক্রমে টিক দিন:
+
+| সেকশন              | স্কোপ                          |
+| ------------------ | ------------------------------ |
+| **Users**          | ✅ `current_user:read`         |
+| **Files**          | ✅ `file_comments:read`        |
+|                    | ✅ `file_comments:write`       |
+|                    | ✅ `file_content:read`         |
+|                    | ✅ `file_metadata:read`        |
+|                    | ✅ `file_versions:read`        |
+| **Design systems** | ✅ `library_assets:read`       |
+|                    | ✅ `library_content:read`      |
+|                    | ✅ `team_library_content:read` |
+| **Development**    | ✅ `file_dev_resources:read`   |
+|                    | ✅ `file_dev_resources:write`  |
+| **Folders**        | ✅ `folders:read`              |
+| **Webhooks**       | ❌ দুইটাই বাদ — কাজে লাগবে না  |
+
+ভ্যারিয়েবলের আলাদা স্কোপ নেই, খুঁজবেন না। ভ্যারিয়েবল Plugin API দিয়ে পড়া-লেখা হয়, REST দিয়ে না — এজন্যই Free/Pro প্ল্যানেও কাজ করে।
 
 টোকেন `figd_` দিয়ে শুরু, **একবারই দেখাবে** — সাথে সাথে কপি করুন।
 
@@ -233,12 +252,12 @@ notepad %USERPROFILE%\.dsh\profiles\web\cordis.patch.yml
 ```yaml
 - insert:
     - id: mcp-figma
-      name: '@deepseek-ai/dsh-mcp-client'
+      name: "@deepseek-ai/dsh-mcp-client"
       config:
         serverName: figma
         transport: stdio
         command: npx
-        args: ['-y', 'figma-console-mcp@latest']
+        args: ["-y", "figma-console-mcp@latest"]
 ```
 
 **ইন্ডেন্টেশন হুবহু রাখুন** — YAML স্পেসের ব্যাপারে কড়া, ট্যাব চলবে না।
@@ -399,21 +418,29 @@ Figma-তে এখন যে ফ্রেমটা সিলেক্ট কর
 
 ## অংশ ৭ — Troubleshooting
 
-| সমস্যা | সমাধান |
-|---|---|
-| `'node' is not recognized` | টার্মিনাল রিস্টার্ট করুন। না হলে: `$env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")` |
-| `npm.ps1` / `npx.ps1 cannot be loaded because running scripts is disabled` | PowerShell-এর execution policy আটকাচ্ছে। cmd-তে চালান (Win+R → `cmd`), অথবা একবার: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
-| `Cannot find module` / `.node file not found` | `--allow-scripts` দিয়ে আবার ইনস্টল করুন (ধাপ ২) |
-| পোর্ট 3080 ব্যস্ত | `netstat -ano \| findstr 3080` দিয়ে দেখুন কে ধরে আছে |
-| `MISSING_CREDENTIAL` | Models পেজে key সেভ হয়নি |
-| `UNKNOWN_MODEL` | কনফিগার করা মডেল সিলেক্ট করুন |
-| Fetch models → 401 | Key ভুল বা ক্রেডিট নেই |
-| PC হ্যাং / মেমরি ফুল | `taskkill /IM node.exe /F`, অটো-স্টার্ট সরান |
-| `client registration failed: HTTP 403` (Figma OAuth) | Figma dynamic client registration মানে না। অফিশিয়াল রিমোট MCP dsh-এ চলবে না — figma-console-mcp ব্যবহার করুন |
-| `Cannot read properties of undefined (reading 'bytes')` | স্ক্রিনশট টুল ভাঙা। সেশন দূষিত — **New Session** খুলুন |
-| `figma_get_status` টুলই নেই | `cordis.patch.yml`-এর ইন্ডেন্টেশন দেখুন (ট্যাব নয়, স্পেস), dsh রিস্টার্ট |
-| Figma টোকেন পাচ্ছে না | `setx`-এর পর নতুন cmd থেকে dsh চালিয়েছেন কি না দেখুন |
-| Figma লেখার টুল কাজ করছে না | ব্রিজ প্লাগইন উইন্ডো বন্ধ, বা Figma ডেস্কটপ বন্ধ, বা Minimal mode-এ আছেন |
+**কিছু কাজ না করলে আগে যাচাই স্ক্রিপ্টটা চালান** — কোন অংশটা নেই সেটা সরাসরি বলে দেবে:
+
+```
+verify.bat
+```
+
+তারপর নিচের টেবিল।
+
+| সমস্যা                                                                     | সমাধান                                                                                                                                                               |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'node' is not recognized`                                                 | টার্মিনাল রিস্টার্ট করুন। না হলে: `$env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")` |
+| `npm.ps1` / `npx.ps1 cannot be loaded because running scripts is disabled` | PowerShell-এর execution policy আটকাচ্ছে। cmd-তে চালান (Win+R → `cmd`), অথবা একবার: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`                             |
+| `Cannot find module` / `.node file not found`                              | `--allow-scripts` দিয়ে আবার ইনস্টল করুন (ধাপ ২)                                                                                                                     |
+| পোর্ট 3080 ব্যস্ত                                                          | `netstat -ano \| findstr 3080` দিয়ে দেখুন কে ধরে আছে                                                                                                                |
+| `MISSING_CREDENTIAL`                                                       | Models পেজে key সেভ হয়নি                                                                                                                                            |
+| `UNKNOWN_MODEL`                                                            | কনফিগার করা মডেল সিলেক্ট করুন                                                                                                                                        |
+| Fetch models → 401                                                         | Key ভুল বা ক্রেডিট নেই                                                                                                                                               |
+| PC হ্যাং / মেমরি ফুল                                                       | `taskkill /IM node.exe /F`, অটো-স্টার্ট সরান                                                                                                                         |
+| `client registration failed: HTTP 403` (Figma OAuth)                       | Figma dynamic client registration মানে না। অফিশিয়াল রিমোট MCP dsh-এ চলবে না — figma-console-mcp ব্যবহার করুন                                                        |
+| `Cannot read properties of undefined (reading 'bytes')`                    | স্ক্রিনশট টুল ভাঙা। সেশন দূষিত — **New Session** খুলুন                                                                                                               |
+| `figma_get_status` টুলই নেই                                                | `cordis.patch.yml`-এর ইন্ডেন্টেশন দেখুন (ট্যাব নয়, স্পেস), dsh রিস্টার্ট                                                                                            |
+| Figma টোকেন পাচ্ছে না                                                      | `setx`-এর পর নতুন cmd থেকে dsh চালিয়েছেন কি না দেখুন                                                                                                                |
+| Figma লেখার টুল কাজ করছে না                                                | ব্রিজ প্লাগইন উইন্ডো বন্ধ, বা Figma ডেস্কটপ বন্ধ, বা Minimal mode-এ আছেন                                                                                             |
 
 `deprecated node-domexception` warning উপেক্ষা করা যায়। npm আপডেটের notice-ও ঐচ্ছিক।
 
@@ -424,15 +451,18 @@ Figma-তে এখন যে ফ্রেমটা সিলেক্ট কর
 শূন্য থেকে পুরো সিস্টেম দাঁড় করাতে এই ক্রমে যান। প্রতিটার বিস্তারিত উপরের অংশগুলোতে।
 
 **প্রস্তুতি**
+
 - [ ] Figma ডেস্কটপ অ্যাপ ইনস্টল ও লগইন করা আছে
 - [ ] cmd ব্যবহার করছেন (PowerShell নয়) — নইলে execution policy ঠিক করে নিন
 
 **ইনস্টল (সব cmd-তে)**
+
 - [ ] `winget install OpenJS.NodeJS.LTS` → **টার্মিনাল রিস্টার্ট** → `node -v` যাচাই
 - [ ] `winget install Git.Git` → **টার্মিনাল রিস্টার্ট** → `git --version` যাচাই
 - [ ] `npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh`
 
 **dsh কনফিগ**
+
 - [ ] `dsh web` → `http://127.0.0.1:3080` → Settings → Models → Anthropic key বসান
 - [ ] `setx FIGMA_ACCESS_TOKEN "figd_..."` এবং `setx ENABLE_MCP_APPS true`
 - [ ] **নতুন cmd** খুলে `echo %FIGMA_ACCESS_TOKEN%` যাচাই
@@ -440,11 +470,13 @@ Figma-তে এখন যে ফ্রেমটা সিলেক্ট কর
 - [ ] dsh রিস্টার্ট → সেশনে `figma_get_status` কাজ করে
 
 **Figma ব্রিজ**
+
 - [ ] `dir %USERPROFILE%\.figma-console-mcp\plugin` → manifest.json আছে
 - [ ] Figma ডেস্কটপে `Ctrl+/` → `import` → Import plugin from manifest…
 - [ ] প্লাগইন চালু → সবুজ **Connected — Connected to 1 AI app**
 
 **প্রজেক্ট**
+
 - [ ] ফোল্ডার বানান, `git init`, `templates/AGENTS.md` কপি করুন
 - [ ] dsh-এ Choose workspace দিয়ে যোগ ও সিলেক্ট
 - [ ] New Session, Standard mode → `figma_diagnose` দিয়ে টেস্ট

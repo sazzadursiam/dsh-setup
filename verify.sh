@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# Verify the dsh + Figma setup on macOS, Linux or WSL
+set -uo pipefail
+
+GREEN=$'\033[32m'; RED=$'\033[31m'; YEL=$'\033[33m'; DIM=$'\033[2m'; BOLD=$'\033[1m'; OFF=$'\033[0m'
+FAIL=0
+
+pass() { printf '  %s[ OK ]%s %s\n' "$GREEN" "$OFF" "$*"; }
+fail() { printf '  %s[FAIL]%s %s\n' "$RED" "$OFF" "$*"; FAIL=1; }
+warn() { printf '  %s[WARN]%s %s\n' "$YEL" "$OFF" "$*"; }
+hint() { printf '         %s%s%s\n' "$DIM" "$*" "$OFF"; }
+
+OS="linux"
+case "$(uname -s)" in
+  Darwin) OS="mac" ;;
+  Linux) grep -qi microsoft /proc/version 2>/dev/null && OS="wsl" ;;
+esac
+
+printf '\n%s============================================%s\n' "$BOLD" "$OFF"
+printf '%s  dsh + Figma - Verify%s\n' "$BOLD" "$OFF"
+printf '%s============================================%s\n\n' "$BOLD" "$OFF"
+printf '  Platform: %s\n\n' "$OS"
+
+# ---------- Node ----------
+if command -v node >/dev/null 2>&1; then
+  pass "Node.js $(node -v)"
+else
+  fail "Node.js not found"
+  hint "Run ./setup.sh, then open a new terminal."
+fi
+
+# ---------- Git ----------
+if command -v git >/dev/null 2>&1; then
+  pass "Git $(git --version | awk '{print $3}')"
+else
+  warn "Git not found - only needed for version control"
+fi
+
+# ---------- dsh ----------
+if command -v dsh >/dev/null 2>&1; then
+  pass "dsh installed"
+else
+  fail "dsh not found"
+  hint "npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh"
+fi
+
+# ---------- Figma token ----------
+if [ -n "${FIGMA_ACCESS_TOKEN:-}" ]; then
+  pass "FIGMA_ACCESS_TOKEN is set"
+  case "$FIGMA_ACCESS_TOKEN" in
+    figd_*) ;;
+    *) warn "Token does not start with figd_ - check you copied the right value" ;;
+  esac
+else
+  fail "FIGMA_ACCESS_TOKEN not set in this shell"
+  hint 'export FIGMA_ACCESS_TOKEN="figd_..."  (add it to ~/.zshrc or ~/.bashrc)'
+fi
+
+# ---------- ENABLE_MCP_APPS ----------
+if [ -n "${ENABLE_MCP_APPS:-}" ]; then
+  pass "ENABLE_MCP_APPS = $ENABLE_MCP_APPS"
+else
+  warn "ENABLE_MCP_APPS not set"
+  hint "export ENABLE_MCP_APPS=true"
+fi
+
+# ---------- MCP config ----------
+CFG="$HOME/.dsh/profiles/web/cordis.patch.yml"
+if [ ! -f "$CFG" ]; then
+  fail "cordis.patch.yml not found"
+  hint "Run dsh web once to create the profile, then copy the config."
+elif grep -q "serverName: figma" "$CFG"; then
+  pass "MCP config has the figma entry"
+else
+  fail "cordis.patch.yml has no figma entry"
+  hint "cp cordis.patch.yml ~/.dsh/profiles/web/"
+fi
+
+# ---------- Anthropic key ----------
+if [ -f "$HOME/.dsh/.credentials.yaml" ]; then
+  pass "Credentials file exists"
+else
+  warn "No credentials file yet"
+  hint "Add your API key in dsh: Settings > Models"
+fi
+
+# ---------- Bridge plugin ----------
+PLUG="$HOME/.figma-console-mcp/plugin/manifest.json"
+if [ "$OS" = "mac" ]; then
+  if [ -f "$PLUG" ]; then
+    pass "Bridge plugin files present"
+    hint "Import in Figma Desktop: Cmd+/ then type \"import\""
+    hint "$PLUG"
+  else
+    fail "Bridge plugin files not generated yet"
+    hint "Start dsh web and open a session once, then re-run this."
+  fi
+else
+  warn "Figma write access is not available on Linux (no desktop app)"
+  hint "Read-only Figma tools still work via your PAT."
+fi
+
+# ---------- dsh running? ----------
+if command -v lsof >/dev/null 2>&1 && lsof -i :3080 >/dev/null 2>&1; then
+  pass "Something is listening on port 3080"
+else
+  printf '  %s[INFO]%s dsh does not appear to be running - start it with: dsh web\n' "$DIM" "$OFF"
+fi
+
+printf '\n%s============================================%s\n' "$BOLD" "$OFF"
+if [ "$FAIL" -eq 1 ]; then
+  printf '%s  SOME CHECKS FAILED - see the notes above%s\n' "$RED" "$OFF"
+  printf '  Details in SETUP.md\n'
+else
+  printf '%s  ALL CHECKS PASSED%s\n' "$GREEN" "$OFF"
+  if [ "$OS" = "mac" ]; then
+    printf '\n  Last step is manual: open Figma Desktop, run the\n'
+    printf '  "Figma Desktop Bridge" plugin, and look for the\n'
+    printf '  green "Connected" status.\n'
+  fi
+  printf '\n  Then in a dsh session, run:  figma_get_status\n'
+fi
+printf '%s============================================%s\n\n' "$BOLD" "$OFF"
+
+exit $FAIL

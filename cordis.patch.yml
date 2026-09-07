@@ -19,9 +19,9 @@
 
 - insert:
     - id: mcp-figma
-      name: '@deepseek-ai/dsh-mcp-client'
+      name: "@deepseek-ai/dsh-mcp-client"
       config:
         serverName: figma
         transport: stdio
         command: npx
-        args: ['-y', 'figma-console-mcp@latest']
+        args: ["-y", "figma-console-mcp@latest"]

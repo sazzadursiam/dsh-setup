@@ -29,11 +29,11 @@ chmod +x setup.sh
 
 ## প্ল্যাটফর্ম অনুযায়ী কী পাবেন
 
-| | Windows | Mac | Ubuntu | WSL |
-|---|---|---|---|---|
-| dsh + কোডিং | ✅ | ✅ | ✅ | ✅ |
-| Figma read (PAT) | ✅ | ✅ | ✅ | ✅ |
-| Figma write (ব্রিজ) | ✅ | ✅ | ❌ | ⚠️ |
+|                     | Windows | Mac | Ubuntu | WSL |
+| ------------------- | ------- | --- | ------ | --- |
+| dsh + কোডিং         | ✅      | ✅  | ✅     | ✅  |
+| Figma read (PAT)    | ✅      | ✅  | ✅     | ✅  |
+| Figma write (ব্রিজ) | ✅      | ✅  | ❌     | ⚠️  |
 
 **Linux-এ Figma ডেস্কটপ অ্যাপ নেই**, আর ব্রিজ প্লাগইন ডেস্কটপ ছাড়া ইমপোর্ট করা যায় না। তাই Ubuntu-তে ডিজাইন তৈরি বা এডিট করা যাবে না — শুধু পড়া যাবে।
 
@@ -53,15 +53,16 @@ chmod +x setup.sh
 
 ## ফাইলগুলো
 
-| ফাইল | কী |
-|---|---|
-| `setup.bat` | ইনস্টল স্ক্রিপ্ট — Windows |
-| `setup.sh` | ইনস্টল স্ক্রিপ্ট — Mac, Ubuntu, WSL |
-| `cordis.patch.yml` | Figma MCP কনফিগ — dsh প্রোফাইলে কপি করতে হবে |
-| `SETUP.md` | পূর্ণ গাইড — সেটআপ, workflow, troubleshooting |
-| `templates/AGENTS.md` | এজেন্টের নিয়ম — প্রতি প্রজেক্ট ফোল্ডারে কপি করতে হবে |
-| `.env.example` | কোন env variable লাগে তার তালিকা |
-| `CHANGELOG.md` | কী বদলেছে |
+| ফাইল                       | কী                                                    |
+| -------------------------- | ----------------------------------------------------- |
+| `setup.bat`                | ইনস্টল স্ক্রিপ্ট — Windows                            |
+| `setup.sh`                 | ইনস্টল স্ক্রিপ্ট — Mac, Ubuntu, WSL                   |
+| `verify.bat` / `verify.sh` | কী সেট আছে, কী নেই — যাচাই                            |
+| `cordis.patch.yml`         | Figma MCP কনফিগ — dsh প্রোফাইলে কপি করতে হবে          |
+| `SETUP.md`                 | পূর্ণ গাইড — সেটআপ, workflow, troubleshooting         |
+| `templates/AGENTS.md`      | এজেন্টের নিয়ম — প্রতি প্রজেক্ট ফোল্ডারে কপি করতে হবে |
+| `.env.example`             | কোন env variable লাগে তার তালিকা                      |
+| `CHANGELOG.md`             | কী বদলেছে                                             |
 
 `SETUP.md`-এর কমান্ডগুলো Windows-ভিত্তিক। Mac/Linux-এ পাথ `~/` দিয়ে শুরু হবে (`%USERPROFILE%` নয়), আর কীবোর্ড শর্টকাট Mac-এ `Cmd+/`।
 

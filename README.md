@@ -47,6 +47,15 @@ On Windows, if the script installs Node or Git, it stops and asks you to reopen 
 
 Full detail in `SETUP.md`.
 
+## Something not working?
+
+Run the verifier before digging through docs — it tells you which piece is missing:
+
+```
+verify.bat          # Windows
+./verify.sh         # macOS / Linux / WSL
+```
+
 ## Why not the official Figma MCP server
 
 Figma's remote MCP (`https://mcp.figma.com/mcp`) does not work with dsh:
@@ -67,15 +76,16 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 
 ## Files
 
-| File | Purpose |
-|---|---|
-| `README.bn.md` | This page in Bengali |
-| `SETUP.md` | Full guide (Bengali) — setup, workflow, troubleshooting |
-| `setup.bat` / `setup.sh` | Install scripts |
-| `cordis.patch.yml` | MCP server config — copy into your dsh profile |
-| `templates/AGENTS.md` | Agent rules — copy into each project folder |
-| `.env.example` | Which environment variables you need |
-| `CHANGELOG.md` | What changed and why |
+| File                       | Purpose                                                 |
+| -------------------------- | ------------------------------------------------------- |
+| `README.bn.md`             | This page in Bengali                                    |
+| `SETUP.md`                 | Full guide (Bengali) — setup, workflow, troubleshooting |
+| `setup.bat` / `setup.sh`   | Install scripts                                         |
+| `verify.bat` / `verify.sh` | Check what is set up and what is missing                |
+| `cordis.patch.yml`         | MCP server config — copy into your dsh profile          |
+| `templates/AGENTS.md`      | Agent rules — copy into each project folder             |
+| `.env.example`             | Which environment variables you need                    |
+| `CHANGELOG.md`             | What changed and why                                    |
 
 ## Secrets
 
