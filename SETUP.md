@@ -517,8 +517,10 @@ verify.bat
 আপডেট:
 
 ```powershell
-npm update -g @deepseek-ai/dsh
+npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
 ```
+
+**`npm update -g` ব্যবহার করবেন না** — এটা `--allow-scripts` allowlist পুনরায় প্রয়োগ করে না, ফলে native module (node-pty, koffi) বানানো ছাড়া থেকে যায় (`Cannot find module` / `.node file not found` error — অংশ ৭ দেখুন)। উপরের install command-ই আপডেটের সঠিক উপায়, আর বারবার চালানো নিরাপদ — ইতিমধ্যে latest থাকলে কিছুই বদলায় না।
 
 ---
 
@@ -542,7 +544,7 @@ dsh web
 ```
 dsh web                              # চালু
 Ctrl+C (dsh-এর window-এ)             # বন্ধ
-npm update -g @deepseek-ai/dsh       # আপডেট
+npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh   # আপডেট (npm update নয় — অংশ ৮)
 dir %USERPROFILE%\.figma-console-mcp\plugin   # প্লাগইন ফাইল চেক
 ```
 
