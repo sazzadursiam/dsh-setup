@@ -275,7 +275,7 @@ dsh web
 
 সার্ভার চালু হলে নিজেই প্লাগইন ফাইল বানায়। যাচাই:
 
-```powershell
+```
 dir %USERPROFILE%\.figma-console-mcp\plugin
 ```
 
@@ -347,7 +347,7 @@ Test AI ফাইলে একটা 200x100 নীল rectangle বানাও
 
 ### প্রতি প্রজেক্টে যা করবেন
 
-```powershell
+```
 mkdir %USERPROFILE%\projects\my-site
 cd %USERPROFILE%\projects\my-site
 git init
@@ -526,7 +526,7 @@ dsh web
 
 **কমান্ড**
 
-```powershell
+```
 dsh web                              # চালু
 Ctrl+C (dsh-এর window-এ)             # বন্ধ
 npm update -g @deepseek-ai/dsh       # আপডেট
