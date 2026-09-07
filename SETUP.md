@@ -91,7 +91,7 @@ Firewall পপআপ এলে **Allow access**।
 
 **Anthropic** — **Add provider** → Anthropic → key বসান। মডেল লিস্ট, endpoint, protocol নিজে থেকেই আসবে। Key নিন console.anthropic.com → API keys থেকে। কনসোলে ক্রেডিট থাকতে হবে; Claude.ai সাবস্ক্রিপশন দিয়ে API চলে না।
 
-সেভ করলে রিস্টার্ট ছাড়াই কাজ করে। Key জমা হয় `$DSH_HOME\.credentials.yaml`-এ, write-only — পরে আর দেখা যায় না।
+সেভ করলে রিস্টার্ট ছাড়াই কাজ করে। Key জমা হয় `%USERPROFILE%\.dsh\.credentials.yaml`-এ (`$DSH_HOME` = dsh-এর ডেটা ফোল্ডার = `%USERPROFILE%\.dsh`), write-only — পরে আর দেখা যায় না।
 
 ### ধাপ ৫: Workspace
 
@@ -554,6 +554,7 @@ dir %USERPROFILE%\.figma-console-mcp\plugin   # প্লাগইন ফাই�
 
 ```
 %USERPROFILE%\.dsh\profiles\web\cordis.patch.yml   # dsh কনফিগ
+%USERPROFILE%\.dsh\.credentials.yaml               # API key (write-only)
 %USERPROFILE%\.figma-console-mcp\plugin\manifest.json   # ব্রিজ প্লাগইন
 <workspace>\AGENTS.md                            # এজেন্টের নিয়ম
 ```
