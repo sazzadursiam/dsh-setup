@@ -262,12 +262,13 @@ notepad %USERPROFILE%\.dsh\profiles\web\cordis.patch.yml
 
 **ইন্ডেন্টেশন হুবহু রাখুন** — YAML স্পেসের ব্যাপারে কড়া, ট্যাব চলবে না।
 
-সেভ করে নতুন cmd থেকে dsh রিস্টার্ট:
+সেভ করে dsh রিস্টার্ট করুন। যে window-এ `dsh web` চলছে সেখানে **Ctrl+C** দিয়ে বন্ধ করুন, তারপর আবার চালান:
 
 ```
-taskkill /IM node.exe /F
 dsh web
 ```
+
+(কনফিগ বদলানো রিস্টার্ট ছাড়া কার্যকর হয় না। Ctrl+C কাজ না করলে — dsh আটকে গেলে — তখনই `taskkill /IM node.exe /F`; অংশ ৩ দেখুন।)
 
 ### ধাপ ৫: ব্রিজ প্লাগইন ইমপোর্ট
 
@@ -526,7 +527,7 @@ dsh web
 
 ```powershell
 dsh web                              # চালু
-taskkill /IM node.exe /F             # বন্ধ
+Ctrl+C (dsh-এর window-এ)             # বন্ধ
 npm update -g @deepseek-ai/dsh       # আপডেট
 dir %USERPROFILE%\.figma-console-mcp\plugin   # প্লাগইন ফাইল চেক
 ```
