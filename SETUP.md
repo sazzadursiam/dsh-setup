@@ -349,7 +349,8 @@ Test AI ফাইলে একটা 200x100 নীল rectangle বানাও
 mkdir %USERPROFILE%\projects\my-site
 cd %USERPROFILE%\projects\my-site
 git init
-copy %USERPROFILE%\dsh-test\AGENTS.md .
+copy %USERPROFILE%\dsh-setup\templates\AGENTS.md .
+REM উপরের পথটা ধরে নিয়েছে dsh-setup রিপোটা %USERPROFILE%-এ clone করা। অন্য জায়গায় থাকলে পথ বদলে নিন।
 ```
 
 তারপর dsh UI-তে **Choose workspace** দিয়ে ফোল্ডারটা যোগ ও সিলেক্ট করুন। সার্ভার রিস্টার্ট লাগে না।
