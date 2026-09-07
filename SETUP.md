@@ -217,7 +217,7 @@ Expiration যা খুশি (৯০ দিন ঠিক আছে)। স্�
 cmd-তে:
 
 ```
-setx FIGMA_ACCESS_TOKEN "figd_আপনার_টোকেন"
+setx FIGMA_ACCESS_TOKEN "figd_..."
 setx ENABLE_MCP_APPS true
 ```
 
