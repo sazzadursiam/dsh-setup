@@ -395,7 +395,7 @@ workspace ফোল্ডারে `AGENTS.md` রাখলে এজেন্�
 
 AGENTS.md বদলালে নতুন সেশন লাগবে — চলমান সেশন পুরনো কপি ধরে রাখে।
 
-মোড **Standard বা Code**। Minimal mode MCP টুল দেখায় না।
+মোড **Standard বা Code**-এ চালান — Minimal mode MCP টুল দেখায় না (বিস্তারিত: অংশ ৫-এর "চালু রাখার শর্ত")।
 
 ### Figma → কোড
 
