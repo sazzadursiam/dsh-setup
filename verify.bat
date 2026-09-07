@@ -41,7 +41,9 @@ if errorlevel 1 (
 REM ---------- Figma token ----------
 if "%FIGMA_ACCESS_TOKEN%"=="" (
     echo   [FAIL] FIGMA_ACCESS_TOKEN not set in this terminal
-    echo          setx FIGMA_ACCESS_TOKEN "figd_..."  then open a NEW terminal
+    echo          Run:  setx FIGMA_ACCESS_TOKEN "figd_..."
+    echo          Then CLOSE this window and open a NEW one, then re-run this.
+    echo          (setx only affects NEW terminals - same-window rechecks still fail.)
     set FAIL=1
 ) else (
     echo   [ OK ] FIGMA_ACCESS_TOKEN is set
