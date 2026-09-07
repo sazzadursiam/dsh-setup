@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify the dsh + Figma setup on macOS, Linux or WSL
+# Verify the dsh + Figma setup on macOS or Linux
 set -uo pipefail
 
 GREEN=$'\033[32m'; RED=$'\033[31m'; YEL=$'\033[33m'; DIM=$'\033[2m'; BOLD=$'\033[1m'; OFF=$'\033[0m'
@@ -13,7 +13,6 @@ hint() { printf '         %s%s%s\n' "$DIM" "$*" "$OFF"; }
 OS="linux"
 case "$(uname -s)" in
   Darwin) OS="mac" ;;
-  Linux) grep -qi microsoft /proc/version 2>/dev/null && OS="wsl" ;;
 esac
 
 printf '\n%s============================================%s\n' "$BOLD" "$OFF"

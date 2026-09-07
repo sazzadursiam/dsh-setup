@@ -1,5 +1,29 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- **WSL support removed — Linux/Ubuntu is now the primary Linux target.**
+  The WSL section in `SETUP.md` became a Linux (Ubuntu) section; WSL-only
+  guidance (port forwarding, `/mnt/c` performance notes, `wsl --install`)
+  and the unverified `FIGMA_WS_HOST=0.0.0.0` workaround were dropped.
+  `setup.sh` and `verify.sh` no longer special-case WSL.
+- `SETUP.md` now has a full macOS setup section (part 2) and was renumbered
+  to Windows · macOS · Linux. `cordis.patch.yml` gained a Windows
+  `npx.cmd` troubleshooting tip.
+
+### Fixed
+
+- `setup.bat` line endings normalized to CRLF (`.gitattributes` added) so
+  `cmd.exe` stops misparsing labels and `if` blocks.
+- `npm update -g` advice replaced with the full `--allow-scripts` install
+  command — `npm update` does not re-apply the allowlist and leaves native
+  modules unbuilt (npm 12 issue).
+- Broken `AGENTS.md` copy path in `SETUP.md`, Bengali characters inside a
+  `setx` placeholder, missing `mkdir` before the config copy, and
+  `taskkill /IM node.exe /F` no longer presented as the normal stop command.
+
 ## [0.2.0] — 2026-09-07
 
 ### Changed

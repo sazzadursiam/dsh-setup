@@ -24,7 +24,7 @@ cd dsh-setup
 setup.bat
 ```
 
-**macOS / Linux / WSL:**
+**macOS / Linux:**
 
 ```bash
 git clone https://github.com/sazzadursiam/dsh-setup.git
@@ -53,7 +53,7 @@ Run the verifier before digging through docs — it tells you which piece is mis
 
 ```
 verify.bat          # Windows
-./verify.sh         # macOS / Linux / WSL
+./verify.sh         # macOS / Linux
 ```
 
 ## Why not the official Figma MCP server

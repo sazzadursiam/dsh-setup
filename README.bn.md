@@ -14,7 +14,7 @@ cd dsh-setup
 setup.bat
 ```
 
-**Mac / Ubuntu / WSL**:
+**Mac / Ubuntu** (Linux):
 
 ```bash
 git clone https://github.com/sazzadursiam/dsh-setup.git
@@ -29,15 +29,13 @@ chmod +x setup.sh
 
 ## প্ল্যাটফর্ম অনুযায়ী কী পাবেন
 
-|                     | Windows | Mac | Ubuntu | WSL |
-| ------------------- | ------- | --- | ------ | --- |
-| dsh + কোডিং         | ✅      | ✅  | ✅     | ✅  |
-| Figma read (PAT)    | ✅      | ✅  | ✅     | ✅  |
-| Figma write (ব্রিজ) | ✅      | ✅  | ❌     | ⚠️  |
+|                     | Windows | Mac | Ubuntu |
+| ------------------- | ------- | --- | ------ |
+| dsh + কোডিং         | ✅      | ✅  | ✅     |
+| Figma read (PAT)    | ✅      | ✅  | ✅     |
+| Figma write (ব্রিজ) | ✅      | ✅  | ❌     |
 
 **Linux-এ Figma ডেস্কটপ অ্যাপ নেই**, আর ব্রিজ প্লাগইন ডেস্কটপ ছাড়া ইমপোর্ট করা যায় না। তাই Ubuntu-তে ডিজাইন তৈরি বা এডিট করা যাবে না — শুধু পড়া যাবে।
-
-**WSL-এর ক্ষেত্রে** Windows-এ Figma ডেস্কটপ চালু রেখে WSL থেকে WebSocket-এ পৌঁছানো তাত্ত্বিকভাবে সম্ভব (`FIGMA_WS_HOST=0.0.0.0` সেট করে, Windows-এর IP দিয়ে)। **এটা যাচাই করা হয়নি।** নিশ্চিত কাজের জন্য Figma-সংক্রান্ত সব কিছু Windows-এর দিকে রাখুন, WSL শুধু কোডের জন্য।
 
 ## এরপর হাতে যা করতে হবে
 
@@ -56,7 +54,7 @@ chmod +x setup.sh
 | ফাইল                       | কী                                                    |
 | -------------------------- | ----------------------------------------------------- |
 | `setup.bat`                | ইনস্টল স্ক্রিপ্ট — Windows                            |
-| `setup.sh`                 | ইনস্টল স্ক্রিপ্ট — Mac, Ubuntu, WSL                   |
+| `setup.sh`                 | ইনস্টল স্ক্রিপ্ট — Mac, Ubuntu (Linux)            |
 | `verify.bat` / `verify.sh` | কী সেট আছে, কী নেই — যাচাই                            |
 | `cordis.patch.yml`         | Figma MCP কনফিগ — dsh প্রোফাইলে কপি করতে হবে          |
 | `SETUP.md`                 | পূর্ণ গাইড — সেটআপ, workflow, troubleshooting         |
@@ -64,7 +62,7 @@ chmod +x setup.sh
 | `.env.example`             | কোন env variable লাগে তার তালিকা                      |
 | `CHANGELOG.md`             | কী বদলেছে                                             |
 
-`SETUP.md`-এর কমান্ডগুলো Windows-ভিত্তিক। Mac/Linux-এ পাথ `~/` দিয়ে শুরু হবে (`%USERPROFILE%` নয়), আর কীবোর্ড শর্টকাট Mac-এ `Cmd+/`।
+`SETUP.md`-এ Windows, macOS (অংশ ২) আর Linux/Ubuntu (অংশ ৩) — তিনটার আলাদা সেকশন আছে। Windows-এর কমান্ডগুলো cmd-ভিত্তিক; Mac/Linux-এ পাথ `~/` দিয়ে শুরু হবে (`%USERPROFILE%` নয়), আর কীবোর্ড শর্টকাট Mac-এ `Cmd+/`।
 
 ## টোকেন
 

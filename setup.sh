@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# dsh + Figma setup for macOS, Ubuntu and WSL
+# dsh + Figma setup for macOS, Ubuntu and other Linux distros
 set -uo pipefail
 
 BOLD=$'\033[1m'; DIM=$'\033[2m'; RED=$'\033[31m'; GREEN=$'\033[32m'; YEL=$'\033[33m'; OFF=$'\033[0m'
@@ -13,9 +13,7 @@ die()  { printf '\n%sSETUP FAILED%s\n\n%s\n\n' "$RED" "$OFF" "$*"; exit 1; }
 OS="unknown"
 case "$(uname -s)" in
   Darwin) OS="mac" ;;
-  Linux)
-    if grep -qi microsoft /proc/version 2>/dev/null; then OS="wsl"; else OS="linux"; fi
-    ;;
+  Linux)  OS="linux" ;;
 esac
 [ "$OS" = "unknown" ] && die "Unsupported OS: $(uname -s). On Windows use setup.bat instead."
 
@@ -27,13 +25,10 @@ say ""
 say "Platform: ${BOLD}$OS${OFF}"
 say ""
 
-if [ "$OS" = "linux" ] || [ "$OS" = "wsl" ]; then
+if [ "$OS" = "linux" ]; then
   say "${YEL}NOTE${OFF}  Figma Desktop does not exist on Linux."
   say "      dsh and coding will work. Figma ${BOLD}write${OFF} access will not,"
   say "      because the Desktop Bridge plugin needs the desktop app."
-  if [ "$OS" = "wsl" ]; then
-    say "      On WSL you can run Figma on the Windows side — see README."
-  fi
   say ""
 fi
 
@@ -51,7 +46,7 @@ else
       command -v brew >/dev/null 2>&1 || die "Homebrew not found. Install it from https://brew.sh then run this again."
       brew install node || die "brew install node failed."
       ;;
-    linux|wsl)
+    linux)
       say "       Using nvm (does not need sudo)."
       curl -fsSL -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash \
         || die "nvm install failed. Check your internet connection."
@@ -74,7 +69,7 @@ else
   say "       Not found. Installing..."
   case "$OS" in
     mac)   brew install git || die "brew install git failed." ;;
-    linux|wsl)
+    linux)
       sudo apt-get update -qq && sudo apt-get install -y git || die "apt install git failed."
       ;;
   esac

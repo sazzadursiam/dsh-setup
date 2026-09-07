@@ -1,10 +1,10 @@
 # DeepSeek Harness (dsh) — লোকাল সেটআপ গাইড
 
 **তৈরি:** সেপ্টেম্বর ২০২৬
-**পরিবেশ:** Windows (এবং WSL)
+**পরিবেশ:** Windows · macOS · Linux/Ubuntu (macOS নির্দেশনা: অংশ ২; Linux Figma সীমাবদ্ধতা: অংশ ৩)
 **অবস্থা:** dsh এখনো developer preview — breaking change আসতে পারে
 
-> **পাথ নিয়ে:** ডকুমেন্টে `%USERPROFILE%` মানে আপনার ইউজার ফোল্ডার (যেমন `C:\Users\AC`)। **cmd**-এ এটা নিজে থেকেই কাজ করে, Windows-এর ফাইল ডায়ালগেও পেস্ট করলে খুলে যায়। **PowerShell**-এ ব্যবহার করলে বদলে `$env:USERPROFILE` লিখুন।
+> **পাথ নিয়ে:** ডকুমেন্টে `%USERPROFILE%` মানে আপনার ইউজার ফোল্ডার (যেমন `C:\Users\AC`)। **cmd**-এ এটা নিজে থেকেই কাজ করে, Windows-এর ফাইল ডায়ালগেও পেস্ট করলে খুলে যায়। **PowerShell**-এ ব্যবহার করলে বদলে `$env:USERPROFILE` লিখুন। **macOS/Linux-এ** বদলে `~` (হোম ফোল্ডার, যেমন `/Users/AC`) — `%USERPROFILE%\.dsh` = `~/.dsh`।
 
 > **প্রতি মেশিনে যা হাতে করতে হবে:** Anthropic API key, Figma PAT, Figma ডেস্কটপে লগইন, ব্রিজ প্লাগইন ইমপোর্ট, workspace সিলেক্ট। বাকিটা কমান্ড চালালেই হয়ে যায়।
 
@@ -12,13 +12,14 @@
 
 - [dsh আসলে কী](#dsh-আসলে-কী)
 - [অংশ ১ — Windows সেটআপ](#অংশ-১--windows-সেটআপ)
-- [অংশ ২ — WSL সেটআপ](#অংশ-২--wsl-সেটআপ)
-- [অংশ ৩ — যা করবেন না](#অংশ-৩--যা-করবেন-না)
-- [অংশ ৪ — নিরাপদ ব্যবহারের নিয়ম](#অংশ-৪--নিরাপদ-ব্যবহারের-নিয়ম)
-- [অংশ ৫ — Figma ইন্টিগ্রেশন (create / edit / read)](#অংশ-৫--figma-ইন্টিগ্রেশন-create--edit--read)
-- [অংশ ৬ — প্রজেক্ট সেটআপ ও কাজের প্রবাহ](#অংশ-৬--প্রজেক্ট-সেটআপ-ও-কাজের-প্রবাহ)
-- [অংশ ৭ — Troubleshooting](#অংশ-৭--troubleshooting)
-- [অংশ ৮ — নতুন PC-তে সেটআপ চেকলিস্ট](#অংশ-৮--নতুন-pc-তে-সেটআপ-চেকলিস্ট)
+- [অংশ ২ — macOS সেটআপ](#অংশ-২--macos-সেটআপ)
+- [অংশ ৩ — Linux (Ubuntu) সেটআপ](#অংশ-৩--linux-ubuntu-সেটআপ)
+- [অংশ ৪ — যা করবেন না](#অংশ-৪--যা-করবেন-না)
+- [অংশ ৫ — নিরাপদ ব্যবহারের নিয়ম](#অংশ-৫--নিরাপদ-ব্যবহারের-নিয়ম)
+- [অংশ ৬ — Figma ইন্টিগ্রেশন (create / edit / read)](#অংশ-৬--figma-ইন্টিগ্রেশন-create--edit--read)
+- [অংশ ৭ — প্রজেক্ট সেটআপ ও কাজের প্রবাহ](#অংশ-৭--প্রজেক্ট-সেটআপ-ও-কাজের-প্রবাহ)
+- [অংশ ৮ — Troubleshooting](#অংশ-৮--troubleshooting)
+- [অংশ ৯ — নতুন PC-তে সেটআপ চেকলিস্ট](#অংশ-৯--নতুন-pc-তে-সেটআপ-চেকলিস্ট)
 - [দ্রুত রেফারেন্স](#দ্রুত-রেফারেন্স)
 
 ---
@@ -105,11 +106,86 @@ Firewall পপআপ এলে **Allow access**।
 
 ---
 
-## অংশ ২ — WSL সেটআপ
+## অংশ ২ — macOS সেটআপ
 
-Coding agent-এর জন্য WSL সাধারণত ভালো, কারণ টুলিং Linux ধরে লেখা।
+macOS-এ **পুরো সেটআপ কাজ করে** — Figma ডেস্কটপ অ্যাপ Mac-এ আছে, তাই read-ও write-ও (Windows-এর মতোই)। ধাপগুলো Windows-এর মতো, শুধু প্যাকেজ ম্যানেজার আর পাথ আলাদা: `brew` আর `~` (= `/Users/<name>`), আর কীবোর্ড শর্টকাট `Cmd+/`।
 
-Windows-এর Node WSL-এ কাজ করে না, আলাদা লাগবে:
+### ধাপ ১: Node.js + Git (Homebrew)
+
+```bash
+brew install node git
+```
+
+`brew` না থাকলে আগে https://brew.sh থেকে install করে নিন। যাচাই:
+
+```bash
+node -v
+git --version
+```
+
+### ধাপ ২: dsh ইনস্টল
+
+```bash
+npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
+```
+
+`--allow-scripts` অংশটা জরুরি — অংশ ১ ধাপ ২-তে কেন, সেটা লেখা আছে।
+
+### ধাপ ৩: env variable
+
+`~/.zshrc`-এর শেষে যোগ করুন (macOS-এর ডিফল্ট শেল zsh):
+
+```bash
+export FIGMA_ACCESS_TOKEN="figd_..."
+export ENABLE_MCP_APPS=true
+```
+
+তারপর `source ~/.zshrc` (বা নতুন terminal) দিয়ে যাচাই:
+
+```bash
+echo $FIGMA_ACCESS_TOKEN
+```
+
+### ধাপ ৪: API key
+
+`dsh web` → `http://127.0.0.1:3080` → Settings → Models → Anthropic key বসান। Key জমা হয় `~/.dsh/.credentials.yaml`-এ, write-only।
+
+### ধাপ ৫: কনফিগ কপি
+
+```bash
+mkdir -p ~/.dsh/profiles/web
+cp cordis.patch.yml ~/.dsh/profiles/web/
+```
+
+ওই ফাইলে আগে থেকে কিছু থাকলে overwrite করবেন না, হাতে মার্জ করুন (অংশ ৬ ধাপ ৪)।
+
+### ধাপ ৬: ব্রিজ প্লাগইন ইমপোর্ট
+
+সার্ভার চালু হলে প্লাগইন ফাইল বানায়। যাচাই:
+
+```bash
+ls ~/.figma-console-mcp/plugin
+```
+
+`manifest.json`, `code.js`, `ui.html` থাকার কথা। তারপর Figma ডেস্কটপে ফাইল খুলে **`Cmd+/`** → টাইপ `import` → **Import plugin from manifest…** → `~/.figma-console-mcp/plugin/manifest.json` বেছে নিন। তারপর **Figma Desktop Bridge** চালান — সবুজ **Connected** দেখাবে।
+
+(বিস্তারিত: অংশ ৬। সেখানে `%USERPROFILE%` আর `setx`-এর জায়গায় `~` আর `export` বসিয়ে পড়ুন।)
+
+### যাচাই
+
+```bash
+./verify.sh
+```
+
+সবুজ হলে সেটআপ শেষ। প্রতি প্রজেক্টে `templates/AGENTS.md` কপি করতে ভুলবেন না (অংশ ৭)।
+
+---
+
+## অংশ ৩ — Linux (Ubuntu) সেটআপ
+
+Linux-এ dsh আর কোডিং পুরো চলে, কিন্তু **Figma write নেই** — Figma ডেস্কটপ অ্যাপ Linux-এ নেই, তাই Desktop Bridge প্লাগইন ইমপোর্ট করা যায় না। Figma read (PAT দিয়ে) কাজ করে।
+
+আলাদা Node লাগবে (ডিস্ট্রোর সাথে আসা Node প্রায়ই পুরনো):
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
@@ -119,19 +195,15 @@ npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,
 dsh web
 ```
 
-Windows-এর ব্রাউজারে `http://127.0.0.1:3080` কাজ করবে — WSL2 নিজেই পোর্ট ফরওয়ার্ড করে।
+`http://127.0.0.1:3080` ব্রাউজারে খুলবে।
 
-**প্রজেক্ট রাখুন `~/projects/`-এ, `/mnt/c/`-তে নয়।** ক্রস-ফাইলসিস্টেম I/O খুব ধীর, আর এজেন্ট প্রচুর ফাইল পড়ে-লেখে।
+**প্রজেক্ট রাখুন `~/projects/`-এ।** dsh workspace হিসেবে পুরো ফোল্ডার ট্রি পড়ে, তাই বড় জায়গা (যেমন হোম বা `/`) সিলেক্ট করবেন না।
 
-WSL নেই এমন PC-তে আনতে চাইলে (Admin PowerShell, তারপর রিস্টার্ট):
-
-```powershell
-wsl --install
-```
+Figma-সংক্রান্ত read-only টুল (ডিজাইন সিস্টেম, ভ্যারিয়েবল, কম্পোনেন্ট পড়া) PAT দিয়েই চলে — কিন্তু **লেখা বা ব্রিজ-নির্ভর টুল কাজ করবে না**। ডিজাইন তৈরি করতে হলে Windows বা Mac ব্যবহার করুন।
 
 ---
 
-## অংশ ৩ — যা করবেন না
+## অংশ ৪ — যা করবেন না
 
 ### অটো-স্টার্ট বসাবেন না
 
@@ -161,7 +233,7 @@ taskkill /IM node.exe /F
 
 ---
 
-## অংশ ৪ — নিরাপদ ব্যবহারের নিয়ম
+## অংশ ৫ — নিরাপদ ব্যবহারের নিয়ম
 
 - **হাতে চালু, কাজ শেষে বন্ধ।** টার্মিনাল দেখতে পেলে বুঝবেন কী হচ্ছে; Ctrl+C দিয়ে সাথে সাথে থামানো যায়।
 - প্রথম কয়েকটা সেশনে **Task Manager খুলে রেখে `node.exe`-এর মেমরি দেখুন**। বাড়তে থাকলে Ctrl+C।
@@ -170,7 +242,7 @@ taskkill /IM node.exe /F
 
 ---
 
-## অংশ ৫ — Figma ইন্টিগ্রেশন (create / edit / read)
+## অংশ ৬ — Figma ইন্টিগ্রেশন (create / edit / read)
 
 এজেন্ট দিয়ে Figma-তে ডিজাইন তৈরি, এডিট ও পড়া — সবই dsh থেকে।
 
@@ -282,7 +354,7 @@ notepad %USERPROFILE%\.dsh\profiles\web\cordis.patch.yml
 dsh web
 ```
 
-(কনফিগ বদলানো রিস্টার্ট ছাড়া কার্যকর হয় না। Ctrl+C কাজ না করলে — dsh আটকে গেলে — তখনই `taskkill /IM node.exe /F`; অংশ ৩ দেখুন।)
+(কনফিগ বদলানো রিস্টার্ট ছাড়া কার্যকর হয় না। Ctrl+C কাজ না করলে — dsh আটকে গেলে — তখনই `taskkill /IM node.exe /F`; অংশ ৪ দেখুন।)
 
 ### ধাপ ৫: ব্রিজ প্লাগইন ইমপোর্ট
 
@@ -328,7 +400,7 @@ Figma ডেস্কটপে একটা ফাইল খুলে **`Ctrl+/`
 
 **সবচেয়ে বড় বিপদ:** একবার ব্যর্থ হলে পুরো সেশন দূষিত হয়ে যায়। এরপর টুল কল ছাড়াই প্রতি টার্নে একই এরর আসতে থাকে। সারানোর উপায় নেই — **New Session** খুলতে হবে।
 
-**সমাধান:** workspace-এ `AGENTS.md` রাখুন (অংশ ৬ দেখুন)। সেখানে নিয়ম লেখা থাকলে এজেন্ট এই টুলে হাতই দেবে না।
+**সমাধান:** workspace-এ `AGENTS.md` রাখুন (অংশ ৭ দেখুন)। সেখানে নিয়ম লেখা থাকলে এজেন্ট এই টুলে হাতই দেবে না।
 
 ### ছবি দেখা নিয়ে
 
@@ -356,7 +428,7 @@ Test AI ফাইলে একটা 200x100 নীল rectangle বানাও
 
 ---
 
-## অংশ ৬ — প্রজেক্ট সেটআপ ও কাজের প্রবাহ
+## অংশ ৭ — প্রজেক্ট সেটআপ ও কাজের প্রবাহ
 
 ### প্রতি প্রজেক্টে যা করবেন
 
@@ -395,7 +467,7 @@ workspace ফোল্ডারে `AGENTS.md` রাখলে এজেন্�
 
 AGENTS.md বদলালে নতুন সেশন লাগবে — চলমান সেশন পুরনো কপি ধরে রাখে।
 
-মোড **Standard বা Code**-এ চালান — Minimal mode MCP টুল দেখায় না (বিস্তারিত: অংশ ৫-এর "চালু রাখার শর্ত")।
+মোড **Standard বা Code**-এ চালান — Minimal mode MCP টুল দেখায় না (বিস্তারিত: অংশ ৬-এর "চালু রাখার শর্ত")।
 
 ### Figma → কোড
 
@@ -432,15 +504,16 @@ Figma-তে এখন যে ফ্রেমটা সিলেক্ট কর
 
 ---
 
-## অংশ ৭ — Troubleshooting
+## অংশ ৮ — Troubleshooting
 
 **কিছু কাজ না করলে আগে যাচাই স্ক্রিপ্টটা চালান** — কোন অংশটা নেই সেটা সরাসরি বলে দেবে:
 
 ```
-verify.bat
+verify.bat          # Windows
+./verify.sh         # macOS / Linux
 ```
 
-> **নোট:** `setx`-এর পর **একই window-এ** verify চালালে `FIGMA_ACCESS_TOKEN`-এ মিথ্যে `[FAIL]` দেখাবে — `setx` শুধু নতুন terminal-কে প্রভাবিত করে। window বন্ধ করে নতুন cmd খুলে আবার চালান।
+> **নোট (Windows):** `setx`-এর পর **একই window-এ** verify চালালে `FIGMA_ACCESS_TOKEN`-এ মিথ্যে `[FAIL]` দেখাবে — `setx` শুধু নতুন terminal-কে প্রভাবিত করে। window বন্ধ করে নতুন cmd খুলে আবার চালান।
 
 তারপর নিচের টেবিল।
 
@@ -464,7 +537,7 @@ verify.bat
 
 ---
 
-## অংশ ৮ — নতুন PC-তে সেটআপ চেকলিস্ট
+## অংশ ৯ — নতুন PC-তে সেটআপ চেকলিস্ট
 
 শূন্য থেকে পুরো সিস্টেম দাঁড় করাতে এই ক্রমে যান। প্রতিটার বিস্তারিত উপরের অংশগুলোতে।
 
@@ -484,7 +557,7 @@ verify.bat
 - [ ] `dsh web` → `http://127.0.0.1:3080` → Settings → Models → Anthropic key বসান
 - [ ] `setx FIGMA_ACCESS_TOKEN "figd_..."` এবং `setx ENABLE_MCP_APPS true`
 - [ ] **নতুন cmd** খুলে `echo %FIGMA_ACCESS_TOKEN%` যাচাই
-- [ ] রিপোর `cordis.patch.yml` কপি করুন `%USERPROFILE%\.dsh\profiles\web\`-এ (অংশ ৫ ধাপ ৪)
+- [ ] রিপোর `cordis.patch.yml` কপি করুন `%USERPROFILE%\.dsh\profiles\web\`-এ (অংশ ৬ ধাপ ৪)
 - [ ] dsh রিস্টার্ট → সেশনে `figma_get_status` কাজ করে
 
 **Figma ব্রিজ**
@@ -508,7 +581,6 @@ verify.bat
 
 - **API key স্বয়ংক্রিয়ভাবে** — প্রতি মেশিনে UI থেকে বসাতে হবে, `$DSH_HOME` আলাদা।
 - **ব্রিজ প্লাগইন** — প্রতি মেশিনে আলাদা করে ইমপোর্ট।
-- **Windows ↔ WSL** — একই PC-তেও আলাদা এনভায়রনমেন্ট, দুইবার সেটআপ।
 
 ### সতর্কতা
 
@@ -522,7 +594,7 @@ verify.bat
 npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
 ```
 
-**`npm update -g` ব্যবহার করবেন না** — এটা `--allow-scripts` allowlist পুনরায় প্রয়োগ করে না, ফলে native module (node-pty, koffi) বানানো ছাড়া থেকে যায় (`Cannot find module` / `.node file not found` error — অংশ ৭ দেখুন)। উপরের install command-ই আপডেটের সঠিক উপায়, আর বারবার চালানো নিরাপদ — ইতিমধ্যে latest থাকলে কিছুই বদলায় না।
+**`npm update -g` ব্যবহার করবেন না** — এটা `--allow-scripts` allowlist পুনরায় প্রয়োগ করে না, ফলে native module (node-pty, koffi) বানানো ছাড়া থেকে যায় (`Cannot find module` / `.node file not found` error — অংশ ৮ দেখুন)। উপরের install command-ই আপডেটের সঠিক উপায়, আর বারবার চালানো নিরাপদ — ইতিমধ্যে latest থাকলে কিছুই বদলায় না।
 
 ---
 
@@ -546,7 +618,7 @@ dsh web
 ```
 dsh web                              # চালু
 Ctrl+C (dsh-এর window-এ)             # বন্ধ
-npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh   # আপডেট (npm update নয় — অংশ ৮)
+npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh   # আপডেট (npm update নয় — অংশ ৯)
 dir %USERPROFILE%\.figma-console-mcp\plugin   # প্লাগইন ফাইল চেক
 ```
 
