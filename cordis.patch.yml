@@ -1,0 +1,27 @@
+# dsh profile patch layer — Figma MCP server
+#
+# Copy this to your dsh web profile:
+#   Windows       copy cordis.patch.yml "%USERPROFILE%\.dsh\profiles\web\"
+#   Mac / Linux   cp cordis.patch.yml ~/.dsh/profiles/web/
+#
+# If that file already has entries, merge this block in by hand instead of
+# overwriting — the file is a top-level YAML array of patch entries.
+#
+# The token is NOT stored here. Set it as an environment variable first:
+#   Windows       setx FIGMA_ACCESS_TOKEN "figd_your_token"
+#                 setx ENABLE_MCP_APPS true
+#   Mac / Linux   export FIGMA_ACCESS_TOKEN="figd_your_token"
+#                 export ENABLE_MCP_APPS=true
+#                 (add both to ~/.zshrc or ~/.bashrc to persist)
+#
+# The npx process inherits the system environment, so nothing else is needed.
+# Restart dsh from a NEW terminal after setting the variables.
+
+- insert:
+    - id: mcp-figma
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: figma
+        transport: stdio
+        command: npx
+        args: ['-y', 'figma-console-mcp@latest']

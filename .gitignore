@@ -1,0 +1,46 @@
+# ---- Secrets: never commit ----
+.env
+.env.*
+!.env.example
+*.local
+secrets.*
+**/credentials*
+**/.credentials*
+*.pem
+*.key
+
+# dsh profile — holds API keys in .credentials.yaml
+.dsh/
+
+# Figma bridge plugin — generated per machine
+.figma-console-mcp/
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+
+# ---- Build output ----
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# ---- Editors ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*~
+
+# ---- OS ----
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---- Backups ----
+*.bak
+*.orig
