@@ -4,7 +4,7 @@ Get [DeepSeek Harness](https://www.deepseek.com/harness/en/) talking to Figma �
 
 Install scripts, a working MCP config, and the dead ends documented so you don't repeat them.
 
-> **বাংলা:** [`README.bn.md`](README.bn.md) · পূর্ণ গাইড [`SETUP.md`](SETUP.md)
+> **বাংলা:** [`README.bn.md`](README.bn.md) · পূর্ণ গাইড [`SETUP.bn.md`](SETUP.bn.md) · **English guide:** [`SETUP.md`](SETUP.md)
 
 ## What this gets you
 
@@ -79,7 +79,8 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 | File                       | Purpose                                                 |
 | -------------------------- | ------------------------------------------------------- |
 | `README.bn.md`             | This page in Bengali                                    |
-| `SETUP.md`                 | Full guide (Bengali) — setup, workflow, troubleshooting |
+| `SETUP.md`                 | Full guide (English) — setup, workflow, troubleshooting |
+| `SETUP.bn.md`              | Full guide (Bengali) — setup, workflow, troubleshooting |
 | `setup.bat` / `setup.sh`   | Install scripts                                         |
 | `verify.bat` / `verify.sh` | Check what is set up and what is missing                |
 | `cordis.patch.yml`         | MCP server config — copy into your dsh profile          |
