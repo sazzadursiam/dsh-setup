@@ -236,6 +236,7 @@ npx প্রসেস সিস্টেমের env উত্তরাধি�
 টিম রিপো ব্যবহার করলে সহজ পথ — শুধু কপি:
 
 ```
+mkdir "%USERPROFILE%\.dsh\profiles\web" 2>nul
 copy cordis.patch.yml "%USERPROFILE%\.dsh\profiles\web\"
 ```
 
