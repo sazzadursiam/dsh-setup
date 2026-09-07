@@ -456,7 +456,7 @@ verify.bat
 | PC হ্যাং / মেমরি ফুল                                                       | `taskkill /IM node.exe /F`, অটো-স্টার্ট সরান                                                                                                                         |
 | `client registration failed: HTTP 403` (Figma OAuth)                       | Figma dynamic client registration মানে না। অফিশিয়াল রিমোট MCP dsh-এ চলবে না — figma-console-mcp ব্যবহার করুন                                                        |
 | `Cannot read properties of undefined (reading 'bytes')`                    | স্ক্রিনশট টুল ভাঙা। সেশন দূষিত — **New Session** খুলুন                                                                                                               |
-| `figma_get_status` টুলই নেই                                                | `cordis.patch.yml`-এর ইন্ডেন্টেশন দেখুন (ট্যাব নয়, স্পেস), dsh রিস্টার্ট                                                                                            |
+| `figma_get_status` টুলই নেই                                                | ১) `cordis.patch.yml`-এর ইন্ডেন্টেশন দেখুন (ট্যাব নয়, স্পেস)। ২) Windows-এ হলে `command: npx` → `command: npx.cmd` চেষ্টা করুন। তারপর dsh রিস্টার্ট |
 | Figma টোকেন পাচ্ছে না                                                      | `setx`-এর পর নতুন cmd থেকে dsh চালিয়েছেন কি না দেখুন                                                                                                                |
 | Figma লেখার টুল কাজ করছে না                                                | ব্রিজ প্লাগইন উইন্ডো বন্ধ, বা Figma ডেস্কটপ বন্ধ, বা Minimal mode-এ আছেন                                                                                             |
 

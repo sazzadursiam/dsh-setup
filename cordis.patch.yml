@@ -16,6 +16,10 @@
 #
 # The npx process inherits the system environment, so nothing else is needed.
 # Restart dsh from a NEW terminal after setting the variables.
+#
+# Windows tip: most setups work with "npx" as-is. If the figma tools fail to
+# load and dsh spawns stdio without a shell, change "command: npx" to
+# "command: npx.cmd" — the .cmd shim is what cmd.exe actually resolves.
 
 - insert:
     - id: mcp-figma
