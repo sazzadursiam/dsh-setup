@@ -94,7 +94,9 @@ Firewall পপআপ এলে **Allow access**।
 
 **Anthropic** — **Add provider** → Anthropic → key বসান। মডেল লিস্ট, endpoint, protocol নিজে থেকেই আসবে। Key নিন console.anthropic.com → API keys থেকে। কনসোলে ক্রেডিট থাকতে হবে; Claude.ai সাবস্ক্রিপশন দিয়ে API চলে না।
 
-সেভ করলে রিস্টার্ট ছাড়াই কাজ করে। Key জমা হয় `%USERPROFILE%\.dsh\.credentials.yaml`-এ (`$DSH_HOME` = dsh-এর ডেটা ফোল্ডার = `%USERPROFILE%\.dsh`), write-only — পরে আর দেখা যায় না।
+সেভ করলে রিস্টার্ট ছাড়াই কাজ করে। Key জমা হয় `%USERPROFILE%\.dsh\.credentials.yaml`-এ (`$DSH_HOME` = dsh-এর ডেটা ফোল্ডার = `%USERPROFILE%\.dsh`)।
+
+> ⚠️ **ওই ফাইলে key গুলো সাদা টেক্সটে থাকে।** ফাইলের `refs:` অংশে প্রতিটা key নাম ধরে লেখা, যেকোনো টেক্সট এডিটরে পড়া যায় — UI লুকিয়ে রাখে, ফাইল রাখে না। `.dsh\` ফোল্ডারটাকে পাসওয়ার্ড ফাইলের মতো ভাবুন: অন্য মেশিনে কপি করবেন না, রিপো বা সিঙ্ক হওয়া ব্যাকআপে রাখবেন না, আর কোনো চ্যাট বা issue-তে এর ভেতরের লেখা পেস্ট করবেন না। যে ফাইলটা পড়তে পারবে, সে আপনার সব provider key পেয়ে যাবে। ফাঁস হলে ভেতরের প্রতিটা key বদলে ফেলুন।
 
 ### ধাপ ৫: Workspace
 
@@ -150,7 +152,7 @@ echo $FIGMA_ACCESS_TOKEN
 
 ### ধাপ ৪: API key
 
-`dsh web` → `http://127.0.0.1:3080` → Settings → Models → Anthropic key বসান। Key জমা হয় `~/.dsh/.credentials.yaml`-এ, write-only।
+`dsh web` → `http://127.0.0.1:3080` → Settings → Models → Anthropic key বসান। Key জমা হয় `~/.dsh/.credentials.yaml`-এ, **সাদা টেক্সটে** — অংশ ১ ধাপ ৪-এর সতর্কতা দেখুন।
 
 ### ধাপ ৫: কনফিগ কপি
 
@@ -662,7 +664,7 @@ dir %USERPROFILE%\.figma-console-mcp\plugin   # প্লাগইন ফাই�
 
 ```
 %USERPROFILE%\.dsh\profiles\web\cordis.patch.yml   # dsh কনফিগ
-%USERPROFILE%\.dsh\.credentials.yaml               # API key (write-only)
+%USERPROFILE%\.dsh\.credentials.yaml               # API key — সাদা টেক্সট, শেয়ার করবেন না
 %USERPROFILE%\.figma-console-mcp\plugin\manifest.json   # ব্রিজ প্লাগইন
 <workspace>\AGENTS.md                            # এজেন্টের নিয়ম
 ```

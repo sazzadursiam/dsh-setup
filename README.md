@@ -92,6 +92,8 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 
 No tokens live in this repo. The Figma token is read from the system environment, and the Anthropic key is entered in the dsh UI.
 
+Entering a key in the UI is not the same as encrypting it: dsh writes every provider key **in plain text** to `~/.dsh/.credentials.yaml`. Never copy that file or the `.dsh/` folder to another machine, a repo, or a syncing backup, and never paste its contents anywhere. Details in `SETUP.md`, Part 1 Step 4.
+
 If a token ever gets committed, deleting the file is not enough — it stays in git history. Revoke it at figma.com → Settings → Security and issue a new one.
 
 ## Status

@@ -15,6 +15,12 @@
 
 ### Fixed
 
+- **`.credentials.yaml` was documented as "write-only — you cannot see them
+  again later". That is wrong.** The file's `refs:` section stores every
+  provider key in plain text, readable in any editor. Corrected in six places
+  across `SETUP.md`, `SETUP.bn.md`, `README.md` and `README.bn.md`, and replaced
+  with a warning to treat `.dsh/` as a password file. Anyone who followed the
+  old wording may have copied or shared that file believing it was safe.
 - `setup.bat` line endings normalized to CRLF (`.gitattributes` added) so
   `cmd.exe` stops misparsing labels and `if` blocks.
 - `npm update -g` advice replaced with the full `--allow-scripts` install

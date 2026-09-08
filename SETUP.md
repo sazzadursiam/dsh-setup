@@ -94,7 +94,9 @@ Open **Settings → Models**.
 
 **Anthropic** — **Add provider** → Anthropic → paste the key. Model list, endpoint and protocol come automatically. Get the key from console.anthropic.com → API keys. You need credit on the console; a Claude.ai subscription does not enable the API.
 
-Once saved it works without a restart. Keys are stored in `%USERPROFILE%\.dsh\.credentials.yaml` (`$DSH_HOME` = dsh's data folder = `%USERPROFILE%\.dsh`), write-only — you cannot see them again later.
+Once saved it works without a restart. Keys are stored in `%USERPROFILE%\.dsh\.credentials.yaml` (`$DSH_HOME` = dsh's data folder = `%USERPROFILE%\.dsh`).
+
+> ⚠️ **That file stores your keys in plain text.** Its `refs:` section lists every key by name, readable in any text editor — the UI hides them, the file does not. Treat `.dsh\` like a password file: never copy it to another machine, never put it in a repo or a backup that syncs, and never paste its contents into a chat or issue. Anyone who reads it has all your provider keys. If it leaks, rotate every key it contains.
 
 ### Step 5: Workspace
 
@@ -150,7 +152,7 @@ echo $FIGMA_ACCESS_TOKEN
 
 ### Step 4: API key
 
-`dsh web` → `http://127.0.0.1:3080` → Settings → Models → add the Anthropic key. Keys are stored in `~/.dsh/.credentials.yaml`, write-only.
+`dsh web` → `http://127.0.0.1:3080` → Settings → Models → add the Anthropic key. Keys are stored in `~/.dsh/.credentials.yaml` **in plain text** — see the warning in Part 1 Step 4.
 
 ### Step 5: Copy the config
 
@@ -662,7 +664,7 @@ dir %USERPROFILE%\.figma-console-mcp\plugin   # check plugin files
 
 ```
 %USERPROFILE%\.dsh\profiles\web\cordis.patch.yml   # dsh config
-%USERPROFILE%\.dsh\.credentials.yaml               # API key (write-only)
+%USERPROFILE%\.dsh\.credentials.yaml               # API keys — PLAIN TEXT, never share
 %USERPROFILE%\.figma-console-mcp\plugin\manifest.json   # bridge plugin
 <workspace>\AGENTS.md                            # agent rules
 ```

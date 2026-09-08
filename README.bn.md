@@ -69,6 +69,8 @@ chmod +x setup.sh
 
 **রিপোতে কোনো টোকেন রাখবেন না।** প্রতি মেশিনে UI থেকে বসাতে হবে।
 
+UI-তে key বসানো মানে কিন্তু এনক্রিপ্ট হওয়া নয় — dsh প্রতিটা provider key **সাদা টেক্সটে** `~/.dsh/.credentials.yaml`-এ লেখে। ওই ফাইল বা `.dsh/` ফোল্ডার অন্য মেশিনে, রিপোতে বা সিঙ্ক হওয়া ব্যাকআপে কপি করবেন না, আর এর ভেতরের লেখা কোথাও পেস্ট করবেন না। বিস্তারিত `SETUP.bn.md` অংশ ১ ধাপ ৪-এ।
+
 - Anthropic key — console.anthropic.com
 - Figma PAT — figma.com → Settings → Security (স্কোপ `SETUP.bn.md`-তে)
 
