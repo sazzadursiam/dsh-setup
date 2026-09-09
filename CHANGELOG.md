@@ -2,6 +2,39 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **`templates/AGENTS.md` restructured for teams with more than one role**
+  (template version `0.4.0`). It was written for a single workflow — Figma to
+  frontend code — so six of its ten sections were Figma-specific. On a research
+  or artwork project most of the file was noise, and the agent reads all of it
+  at session start, which dilutes the rules that do apply.
+
+  Now: a shared core (Communication, Before acting, **Research**, **Images and
+  visual checking**, Model escalation, Safety) followed by clearly-labelled role
+  blocks — Figma tooling, Design to code, and **Visual assets — Photoshop,
+  Illustrator** — that each say to delete them when the project has no use for
+  them. One template, one version stamp, one thing to maintain.
+
+### Added
+
+- **A "Research" section**, applying to every role. Nothing in the template
+  covered research before, despite it being the one activity common to all of
+  them: cite sources, prefer primary ones, separate what a source says from what
+  you inferred, check dates, report conflicts instead of averaging them.
+- **A "Visual assets" role block** for Photoshop and Illustrator work. It leads
+  with the limitation — there is no Adobe integration in this setup, so the
+  agent cannot open `.psd` or `.ai` at all — then covers what it can genuinely
+  help with, and forbids inventing measurements or colour values for a file it
+  cannot read.
+
+### Fixed
+
+- The "cannot render images" rules lived inside the Figma block, but they
+  describe a limitation of the client, not of Figma. Moved into the shared core
+  as "Images and visual checking", so they still apply on projects where the
+  Figma block has been deleted.
+
 ## [0.3.1] — 2026-09-09
 
 ### Fixed

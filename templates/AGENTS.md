@@ -1,10 +1,17 @@
-<!-- dsh-setup-template-version: 0.3.0 -->
+<!-- dsh-setup-template-version: 0.4.0 -->
 <!-- Keep the line above. verify.sh / verify.bat use it to tell you when the
      template has moved on and this copy needs re-applying. -->
 
 # Agent Instructions
 
 Rules for any agent working in this workspace.
+
+**Using this file:** everything down to the end of "Safety" applies to every
+project. The **role blocks** after that do not — **delete the ones this project
+has no use for.** The agent reads this whole file at the start of every session,
+so rules about tools you never touch only dilute the ones that matter.
+
+---
 
 ## Communication
 
@@ -26,11 +33,41 @@ If a request is ambiguous in a way that changes the outcome, ask one question.
 Do not ask about things you can determine by looking at the files. State
 smaller assumptions inline as you work rather than stopping to confirm each one.
 
+## Research
+
+Everyone working here researches, whatever else they do. The failure mode is a
+confident summary with nothing behind it.
+
+- **Give the source.** A claim without a link is an opinion. If you cannot find
+  one, mark the claim as unsourced rather than slipping it in unmarked.
+- **Separate what a source says from what you concluded from it.** Both are
+  useful; blurring them is not.
+- **Prefer primary sources** — official docs, the vendor's own changelog, the
+  spec — over posts summarising them.
+- **Check the date.** The tools here move fast: dsh is a developer preview, and
+  Figma and the Adobe apps change their UI often. Say how old a source is
+  whenever that could matter.
+- **Report disagreement, do not average it.** If two solid sources conflict, say
+  so, then say which you trust and why.
+- Short and sourced beats long and smooth.
+
+## Images and visual checking
+
+This client **cannot render images inline** (`unsupported content type
+"image/png"`), and shell downloads of image URLs fail in this environment. This
+is a limit of the setup, not of any one tool.
+
+- Do not embed or inline images in your reply.
+- Do not use PowerShell, curl, or any shell command to download images.
+- **Visual verification is the user's job.** They have the design tool open next
+  to this chat and can look. Do not claim you have checked how something looks.
+- Report what you changed in words: names, ids, positions, values.
+
 ## Model escalation
 
-Sessions start on a cheap default (`deepseek-v4-flash`, `reasoningEffort: low`).
-That is deliberate — it handles most work, and reasoning tokens bill as output,
-so a high effort setting costs real money on every turn.
+Sessions start on a cheap default model with low reasoning effort. That is
+deliberate — it handles most work, and reasoning tokens bill as output, so a
+high effort setting costs real money on every turn.
 
 When a sub-task is genuinely harder than the default can handle — multi-file
 refactors, tricky algorithms, subtle debugging, security review — **do not
@@ -57,7 +94,27 @@ hard slice pays the higher rate, and the parent's context stays intact.
   `deepseek-official` (direct) and `qwen` (resold through Alibaba). Prefer
   `deepseek-official` — the resold copies lose the off-peak discount.
 
+## Safety
+
+Only modify files inside this workspace.
+
+Before destructive operations — deleting files or layers, replacing variable
+collections, force-pushing, rewriting git history — describe what you are about
+to do and wait for confirmation.
+
+Never write API keys, tokens, or passwords into files. If a secret is needed,
+tell the user to set it as an environment variable.
+
+Prefer small, reviewable changes over large rewrites. If a task needs many
+files changed, outline the plan first.
+
+---
+
+# Role blocks — delete what this project does not use
+
 ## Figma tooling
+
+*Keep for projects that read or write Figma. Delete otherwise.*
 
 This workspace uses `figma-console-mcp` in **Local Mode** (stdio + WebSocket
 Desktop Bridge plugin). Some tools in the exposed tool list do not work in this
@@ -76,27 +133,12 @@ fix is starting a new session.
 
 If you think a screenshot is needed, do not take one. Say so and move on.
 
-### Do not display or download images
+### Image exports
 
-The client cannot render `image/png` inline (`unsupported content type`), and
-shell downloads of Figma image URLs fail in this environment. So:
-
-- Do not embed or inline images in your reply.
-- Do not use PowerShell, curl, or any shell command to download exported images.
-- If the user explicitly asks for an image export, call `figma_get_component_image`
-  and **return the URL as plain text only**. Figma image URLs expire quickly.
-
-### Visual verification is the user's job
-
-The user has Figma Desktop open next to this chat and can see the canvas
-directly. Do not try to verify your own work visually.
-
-After a write operation, report only:
-
-- what was created or changed
-- the node id(s)
-- the layer name(s)
-- the page and position
+If the user explicitly asks for an image export, call
+`figma_get_component_image` and **return the URL as plain text only** — never
+try to fetch or display it. Figma image URLs expire quickly. See "Images and
+visual checking" above.
 
 ### Before writing to Figma
 
@@ -107,7 +149,12 @@ After a write operation, report only:
 - If the bridge is not connected, stop and tell the user to run the
   **Figma Desktop Bridge** plugin in their file. Do not work around it.
 
+After a write, report the node id(s), the layer name(s), and the page and
+position — not how it looks.
+
 ## Design to code
+
+*Keep for frontend projects that build from Figma designs. Delete otherwise.*
 
 When converting a Figma frame to code:
 
@@ -120,19 +167,34 @@ When converting a Figma frame to code:
 - Mobile-first. Do not invent breakpoint behaviour silently — if the design
   only exists at one width, state what you assumed for the others.
 
-## Safety
+## Visual assets — Photoshop, Illustrator
 
-Only modify files inside this workspace.
+*Keep for projects built around raster or vector artwork. Delete otherwise.*
 
-Before destructive operations — deleting files or layers, replacing variable
-collections, force-pushing, rewriting git history — describe what you are about
-to do and wait for confirmation.
+**There is no Photoshop or Illustrator integration in this setup** — no MCP
+server, no file access. You cannot open, read, or edit `.psd`, `.ai`, or any
+other binary design file. Say so plainly when asked, and never guess at what
+such a file contains.
 
-Never write API keys, tokens, or passwords into files. If a secret is needed,
-tell the user to set it as an environment variable.
+What you can do well here:
 
-Prefer small, reviewable changes over large rewrites. If a task needs many
-files changed, outline the plan first.
+- **Research** — references, conventions, competitor teardowns, colour and type
+  theory, print and export specifications.
+- **Write the words** — copy, alt text, specs, briefs, handoff notes.
+- **Organise** — file and layer naming schemes, folder structures, asset
+  inventories, export checklists.
+- **Track** — what has been delivered, what is outstanding, which sizes and
+  formats a deliverable still needs.
+
+Rules:
+
+- **Never invent measurements, colour values, or font names** for a file you
+  cannot read. Ask for the value.
+- If a task truly needs the file's contents, ask the user to export the part
+  that matters as text — a spec, a layer list, hex values — rather than
+  guessing from the filename.
+
+---
 
 ## Project specifics
 
