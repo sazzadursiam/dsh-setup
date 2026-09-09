@@ -22,6 +22,37 @@ If a request is ambiguous in a way that changes the outcome, ask one question.
 Do not ask about things you can determine by looking at the files. State
 smaller assumptions inline as you work rather than stopping to confirm each one.
 
+## Model escalation
+
+Sessions start on a cheap default (`deepseek-v4-flash`, `reasoningEffort: low`).
+That is deliberate — it handles most work, and reasoning tokens bill as output,
+so a high effort setting costs real money on every turn.
+
+When a sub-task is genuinely harder than the default can handle — multi-file
+refactors, tricky algorithms, subtle debugging, security review — **do not
+escalate the whole session.** Delegate that piece with the `subagent` tool and
+set `agentOptions` on the child:
+
+```
+agentOptions: { provider, model, reasoningEffort, maxTokens }
+```
+
+Reasonable targets: `claude-sonnet-5` (provider `anthropic`), `deepseek-v4-pro`
+(provider `deepseek-official`), `qwen3.5-397b-a17b` (provider `qwen`).
+
+Why delegate instead of switching: the parent keeps driving cheaply, only the
+hard slice pays the higher rate, and the parent's context stays intact.
+
+- Use `subagent`, **not `subagent_fork`.** Fork deliberately omits model
+  selection so the child inherits the parent's provider/model and stays eligible
+  for KV cache reuse — passing `agentOptions` there does nothing.
+- Escalate for difficulty, not for length. A long mechanical task stays cheap.
+- Say what you escalated and why. Silent model switches make cost impossible to
+  reason about.
+- `deepseek-v4-flash` and `deepseek-v4-pro` appear under **two** providers:
+  `deepseek-official` (direct) and `qwen` (resold through Alibaba). Prefer
+  `deepseek-official` — the resold copies lose the off-peak discount.
+
 ## Figma tooling
 
 This workspace uses `figma-console-mcp` in **Local Mode** (stdio + WebSocket
