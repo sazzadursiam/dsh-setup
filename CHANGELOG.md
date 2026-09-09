@@ -2,10 +2,12 @@
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-09-09
+
 ### Changed
 
 - **`templates/AGENTS.md` restructured for teams with more than one role**
-  (template version `0.4.0`). It was written for a single workflow — Figma to
+  (template version `0.3.2`). It was written for a single workflow — Figma to
   frontend code — so six of its ten sections were Figma-specific. On a research
   or artwork project most of the file was noise, and the agent reads all of it
   at session start, which dilutes the rules that do apply.

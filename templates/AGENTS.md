@@ -1,4 +1,4 @@
-<!-- dsh-setup-template-version: 0.4.0 -->
+<!-- dsh-setup-template-version: 0.3.2 -->
 <!-- Keep the line above. verify.sh / verify.bat use it to tell you when the
      template has moved on and this copy needs re-applying. -->
 
