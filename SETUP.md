@@ -655,6 +655,14 @@ When setting up a second PC from this document, **update the document wherever r
 
 Update:
 
+```
+update.bat          # Windows
+./update.sh         # macOS / Linux
+```
+
+That pulls this repo, runs the install command below, and flags any project
+whose `AGENTS.md` has fallen behind. To update only the npm package:
+
 ```powershell
 npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
 ```

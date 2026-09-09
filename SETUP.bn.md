@@ -653,6 +653,14 @@ verify.bat          # Windows
 
 আপডেট:
 
+```
+update.bat          # Windows
+./update.sh         # Mac / Linux
+```
+
+এটা রিপো pull করে, নিচের install কমান্ডটা চালায়, আর কোন প্রজেক্টের `AGENTS.md`
+পিছিয়ে আছে সেটাও ধরিয়ে দেয়। শুধু npm প্যাকেজটা আপডেট করতে চাইলে:
+
 ```powershell
 npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
 ```

@@ -47,6 +47,34 @@ On Windows, if the script installs Node or Git, it stops and asks you to reopen 
 
 Full detail in `SETUP.md`.
 
+## Updating
+
+Already set up? One command pulls this repo, updates dsh with the right
+`--allow-scripts` allowlist, and tells you which projects need attention:
+
+```
+update.bat          # Windows
+./update.sh         # macOS / Linux
+```
+
+Pass your project folders — or list them once in `projects.txt` (git-ignored)
+and plain `update.sh` checks them every time:
+
+```
+./update.sh ~/projects/my-site ~/projects/other
+printf '%s\n' ~/projects/my-site > projects.txt
+```
+
+**Why it only reports, never rewrites:** each project has its own copy of
+`AGENTS.md`, and yours has a `## Project specifics` section this repo knows
+nothing about. Overwriting would destroy it. The script compares version stamps
+and points you at a `diff`; you copy across what changed.
+
+Two things no script can do for you: **restart your sessions** (changed rules
+only reach a session started afterwards), and **update `~/.dsh/settings.yaml`**
+— model choice, reasoning effort and API keys are per-machine and live outside
+this repo.
+
 ## Something not working?
 
 Run the verifier before digging through docs — it tells you which piece is missing:
@@ -90,6 +118,7 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 | `SETUP.md`                 | Full guide (English) — setup, workflow, troubleshooting |
 | `SETUP.bn.md`              | Full guide (Bengali) — setup, workflow, troubleshooting |
 | `setup.bat` / `setup.sh`   | Install scripts                                         |
+| `update.bat` / `update.sh` | Update an existing setup, and flag stale `AGENTS.md`    |
 | `verify.bat` / `verify.sh` | Check what is set up and what is missing                |
 | `cordis.patch.yml`         | MCP server config — copy into your dsh profile          |
 | `templates/AGENTS.md`      | Agent rules — copy into each project folder             |

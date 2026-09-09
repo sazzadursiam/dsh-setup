@@ -44,3 +44,7 @@ Desktop.ini
 # ---- Backups ----
 *.bak
 *.orig
+
+# ---- Local ----
+# Your own project paths for update.sh / update.bat. Machine-specific.
+projects.txt

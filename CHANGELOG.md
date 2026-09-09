@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-09-09
+
 ### Added
 
 - **`LICENSE`.** The README claimed MIT and the 0.2.0 entry below said the file
@@ -15,6 +17,12 @@
 - Agent rules for **model escalation** in `templates/AGENTS.md`: run bulk work on
   the cheap default and delegate hard sub-tasks through `subagent` with
   `agentOptions`, rather than raising the model for a whole session.
+- **`update.sh` / `update.bat`** for installations that already exist: pulls the
+  repo, shows what changed, reinstalls dsh with the right `--allow-scripts`
+  allowlist, and reports which projects' `AGENTS.md` are behind. Takes project
+  paths as arguments or from a git-ignored `projects.txt`. It refuses to pull
+  over local changes, and it reports rather than rewrites — overwriting a
+  project's `AGENTS.md` would destroy its `## Project specifics`.
 
 ### Changed
 
