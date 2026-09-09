@@ -99,6 +99,44 @@ if not exist "%PLUG%" (
     echo          %PLUG%
 )
 
+REM ---------- AGENTS.md freshness ----------
+REM Pulling this repo updates templates\AGENTS.md, but every project keeps its
+REM own copy. Compare version stamps so a stale copy does not sit there silently.
+REM Usage: verify.bat [project-dir]   (defaults to the current directory)
+set "TEMPLATE=%~dp0templates\AGENTS.md"
+if "%~1"=="" (set "TARGET_DIR=%CD%") else (set "TARGET_DIR=%~f1")
+set "REPO_DIR=%~dp0"
+if "%REPO_DIR:~-1%"=="\" set "REPO_DIR=%REPO_DIR:~0,-1%"
+
+if not exist "%TEMPLATE%" (
+    echo   [WARN] Template missing: %TEMPLATE%
+) else if /i "%TARGET_DIR%"=="%REPO_DIR%" (
+    echo   [INFO] AGENTS.md check skipped - run from a project folder, or: verify.bat ^<project-dir^>
+) else if not exist "%TARGET_DIR%\" (
+    echo   [FAIL] Not a directory: %TARGET_DIR%
+    set FAIL=1
+) else if not exist "%TARGET_DIR%\AGENTS.md" (
+    echo   [WARN] No AGENTS.md in %TARGET_DIR%
+    echo          copy "%TEMPLATE%" "%TARGET_DIR%\"
+) else (
+    set "TPL_V="
+    set "PRJ_V="
+    for /f "tokens=3" %%v in ('findstr /c:"dsh-setup-template-version:" "%TEMPLATE%"') do set "TPL_V=%%v"
+    for /f "tokens=3" %%v in ('findstr /c:"dsh-setup-template-version:" "%TARGET_DIR%\AGENTS.md"') do set "PRJ_V=%%v"
+    if "!PRJ_V!"=="" (
+        echo   [WARN] AGENTS.md has no version stamp - it predates versioning ^(template is v!TPL_V!^)
+        echo          fc "%TARGET_DIR%\AGENTS.md" "%TEMPLATE%"
+    ) else if "!PRJ_V!"=="!TPL_V!" (
+        echo   [ OK ] AGENTS.md is current ^(v!PRJ_V!^)
+    ) else (
+        echo   [WARN] AGENTS.md is v!PRJ_V! but the template is v!TPL_V! - re-apply the changes
+        echo          fc "%TARGET_DIR%\AGENTS.md" "%TEMPLATE%"
+        echo          Copy the changed sections across by hand. Do NOT overwrite the
+        echo          whole file - you would lose everything under "## Project specifics".
+        echo          Changed rules only reach a session started AFTER the edit.
+    )
+)
+
 REM ---------- dsh running? ----------
 netstat -ano | findstr ":3080" >nul 2>&1
 if errorlevel 1 (

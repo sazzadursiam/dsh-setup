@@ -99,6 +99,42 @@ else
   hint "Read-only Figma tools still work via your PAT."
 fi
 
+# ---------- AGENTS.md freshness ----------
+# Pulling this repo updates templates/AGENTS.md, but every project keeps its own
+# copy. Compare the version stamps so a stale copy does not sit there silently.
+# Usage: ./verify.sh [project-dir]   (defaults to the current directory)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TEMPLATE="$SCRIPT_DIR/templates/AGENTS.md"
+TARGET_DIR="${1:-$PWD}"
+
+stamp_of() { grep -m1 'dsh-setup-template-version:' "$1" 2>/dev/null | awk '{print $3}'; }
+
+if [ ! -f "$TEMPLATE" ]; then
+  warn "Template missing: $TEMPLATE"
+elif [ "$(cd "$TARGET_DIR" 2>/dev/null && pwd)" = "$SCRIPT_DIR" ]; then
+  printf '  %s[INFO]%s AGENTS.md check skipped - run from a project folder, or: ./verify.sh <project-dir>\n' "$DIM" "$OFF"
+elif [ ! -d "$TARGET_DIR" ]; then
+  fail "Not a directory: $TARGET_DIR"
+elif [ ! -f "$TARGET_DIR/AGENTS.md" ]; then
+  warn "No AGENTS.md in $TARGET_DIR"
+  hint "cp \"$TEMPLATE\" \"$TARGET_DIR/\""
+else
+  TPL_V="$(stamp_of "$TEMPLATE")"
+  PRJ_V="$(stamp_of "$TARGET_DIR/AGENTS.md")"
+  if [ -z "$PRJ_V" ]; then
+    warn "AGENTS.md has no version stamp - it predates versioning (template is v$TPL_V)"
+    hint "diff \"$TARGET_DIR/AGENTS.md\" \"$TEMPLATE\""
+  elif [ "$PRJ_V" = "$TPL_V" ]; then
+    pass "AGENTS.md is current (v$PRJ_V)"
+  else
+    warn "AGENTS.md is v$PRJ_V but the template is v$TPL_V - re-apply the changes"
+    hint "diff \"$TARGET_DIR/AGENTS.md\" \"$TEMPLATE\""
+    hint "Copy the changed sections across by hand. Do NOT overwrite the whole"
+    hint "file - you would lose everything under '## Project specifics'."
+    hint "Changed rules only reach a session started AFTER the edit."
+  fi
+fi
+
 # ---------- dsh running? ----------
 if command -v lsof >/dev/null 2>&1 && lsof -i :3080 >/dev/null 2>&1; then
   pass "Something is listening on port 3080"

@@ -488,6 +488,31 @@ workspace ফোল্ডারে `AGENTS.md` রাখলে এজেন্�
 
 **প্রতি প্রজেক্টে আলাদা কপি লাগে** — workspace-ভিত্তিক, গ্লোবাল নয়।
 
+### কপিগুলো হালনাগাদ রাখা
+
+প্রতি প্রজেক্টে আলাদা কপি থাকে বলে, এই রিপোতে `git pull` করলে
+`templates/AGENTS.md` আপডেট হয় — কিন্তু প্রজেক্টে বসে থাকা কপিগুলো **হয় না**।
+
+Template-এর প্রথম লাইনে একটা version stamp আছে, আর verifier সেটা প্রজেক্টের
+কপির সাথে মিলিয়ে দেখে:
+
+```
+verify.bat C:\Users\me\projects\my-site
+./verify.sh ~/projects/my-site
+```
+
+কপি পিছিয়ে থাকলে বলবে: `AGENTS.md is v0.2.0 but the template is v0.3.0`।
+
+**ঠিক করতে গিয়ে পুরো ফাইল overwrite করবেন না** — `## Project specifics`-এ
+আপনার লেখা সব মুছে যাবে। diff দেখে শুধু বদলে যাওয়া সেকশনগুলো কপি করুন:
+
+```
+fc "my-site\AGENTS.md" "templates\AGENTS.md"     REM Windows
+diff ~/projects/my-site/AGENTS.md templates/AGENTS.md
+```
+
+তারপর **নতুন session** খুলুন — চলতি session পুরোনো কপি ধরে রাখে।
+
 ফাইলে যে নিয়মগুলো থাকা দরকার:
 
 - `figma_capture_screenshot` / `figma_take_screenshot` কখনো ব্যবহার না করা, এবং কেন (সেশন নষ্ট হয়)

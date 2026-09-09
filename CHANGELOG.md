@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`LICENSE`.** The README claimed MIT and the 0.2.0 entry below said the file
+  was added, but it never existed. Without it the project was legally "all
+  rights reserved" no matter what the README said.
+- **Version stamp on `templates/AGENTS.md`** (`<!-- dsh-setup-template-version:
+  0.3.0 -->`), and an `AGENTS.md` freshness check in `verify.sh` / `verify.bat`.
+  Both now accept an optional project directory. `git pull` updates the
+  template, never the copies already sitting in projects — this is what tells
+  you a copy has fallen behind, without overwriting your `## Project specifics`.
+- Agent rules for **model escalation** in `templates/AGENTS.md`: run bulk work on
+  the cheap default and delegate hard sub-tasks through `subagent` with
+  `agentOptions`, rather than raising the model for a whole session.
+
 ### Changed
 
 - **WSL support removed — Linux/Ubuntu is now the primary Linux target.**

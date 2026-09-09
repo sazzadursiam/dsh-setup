@@ -62,6 +62,7 @@ chmod +x setup.sh
 | `templates/AGENTS.md`      | এজেন্টের নিয়ম — প্রতি প্রজেক্ট ফোল্ডারে কপি করতে হবে |
 | `.env.example`             | কোন env variable লাগে তার তালিকা                      |
 | `CHANGELOG.md`             | কী বদলেছে                                             |
+| `LICENSE`                  | MIT                                                   |
 
 `SETUP.bn.md`-এ Windows, macOS (অংশ ২) আর Linux/Ubuntu (অংশ ৩) — তিনটার আলাদা সেকশন আছে। Windows-এর কমান্ডগুলো cmd-ভিত্তিক; Mac/Linux-এ পাথ `~/` দিয়ে শুরু হবে (`%USERPROFILE%` নয়), আর কীবোর্ড শর্টকাট Mac-এ `Cmd+/`।
 

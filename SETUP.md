@@ -488,6 +488,33 @@ Putting `AGENTS.md` in the workspace makes the agent read it at session start. I
 
 **You need a separate copy per project** — it's workspace-based, not global.
 
+### Keeping copies up to date
+
+Because each project holds its own copy, `git pull` in this repo updates
+`templates/AGENTS.md` but **not** the copies already sitting in your projects.
+
+The template carries a version stamp on its first line, and the verifier compares
+it against a project's copy:
+
+```
+verify.bat C:\Users\me\projects\my-site
+./verify.sh ~/projects/my-site
+```
+
+It reports `AGENTS.md is v0.2.0 but the template is v0.3.0` when a copy has
+fallen behind.
+
+**Do not fix that by overwriting the file.** Everything you wrote under
+`## Project specifics` would be lost. Diff the two and copy across only the
+sections that changed:
+
+```
+fc "my-site\AGENTS.md" "templates\AGENTS.md"     REM Windows
+diff ~/projects/my-site/AGENTS.md templates/AGENTS.md
+```
+
+Then start a **new session** — a running one keeps the copy it loaded.
+
 The rules the file should contain:
 
 - never use `figma_capture_screenshot` / `figma_take_screenshot`, and why (it ruins the session)

@@ -1,3 +1,7 @@
+<!-- dsh-setup-template-version: 0.3.0 -->
+<!-- Keep the line above. verify.sh / verify.bat use it to tell you when the
+     template has moved on and this copy needs re-applying. -->
+
 # Agent Instructions
 
 Rules for any agent working in this workspace.

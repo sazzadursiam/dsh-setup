@@ -56,6 +56,14 @@ verify.bat          # Windows
 ./verify.sh         # macOS / Linux
 ```
 
+Run it **from a project folder**, or pass one, and it also checks whether that
+project's `AGENTS.md` has fallen behind the template:
+
+```
+verify.bat C:\Users\me\projects\my-site
+./verify.sh ~/projects/my-site
+```
+
 ## Why not the official Figma MCP server
 
 Figma's remote MCP (`https://mcp.figma.com/mcp`) does not work with dsh:
@@ -87,6 +95,7 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 | `templates/AGENTS.md`      | Agent rules — copy into each project folder             |
 | `.env.example`             | Which environment variables you need                    |
 | `CHANGELOG.md`             | What changed and why                                    |
+| `LICENSE`                  | MIT                                                     |
 
 ## Secrets
 
