@@ -2,11 +2,17 @@
 # Update an existing dsh + Figma setup on macOS or Linux.
 #
 #   ./update.sh                      pull + update dsh
-#   ./update.sh ~/projects/site ...  also check those projects' AGENTS.md
+#   ./update.sh ~/projects           scan that folder for projects and check them
+#   ./update.sh ~/projects/site      check one project
 #   ./update.sh --skip-dsh           pull only, leave the npm package alone
 #
-# Project paths can also be listed one per line in `projects.txt` next to this
-# script (git-ignored), so plain `./update.sh` checks them every time.
+# A path holding an AGENTS.md is treated as a project. A path that does not is
+# treated as a folder containing projects, and every AGENTS.md up to two levels
+# under it is found — so point this at your projects root once and new projects
+# are picked up automatically.
+#
+# Paths can also be listed one per line in `projects.txt` next to this script
+# (git-ignored), so plain `./update.sh` checks them every time.
 set -uo pipefail
 
 BOLD=$'\033[1m'; DIM=$'\033[2m'; RED=$'\033[31m'; GREEN=$'\033[32m'; YEL=$'\033[33m'; OFF=$'\033[0m'
@@ -37,6 +43,39 @@ if [ ${#PROJECTS[@]} -eq 0 ] && [ -f "$SCRIPT_DIR/projects.txt" ]; then
     PROJECTS+=("$line")
   done < "$SCRIPT_DIR/projects.txt"
 fi
+
+# A path holding an AGENTS.md is a project. A path that does not is treated as a
+# folder *containing* projects, and every AGENTS.md up to two levels under it is
+# picked up — so a new project needs no bookkeeping, it is found on the next run.
+EXPANDED=()
+for raw in ${PROJECTS[@]+"${PROJECTS[@]}"}; do
+  p="${raw/#\~/$HOME}"
+  if [ ! -d "$p" ]; then
+    EXPANDED+=("$p")                       # keep it; the check loop reports why
+  elif [ -f "$p/AGENTS.md" ]; then
+    EXPANDED+=("$p")
+  else
+    found=0
+    while IFS= read -r hit; do
+      d="$(dirname "$hit")"
+      # never treat this repo's own template as a project copy
+      [ "$(cd "$d" 2>/dev/null && pwd)" = "$(cd "$SCRIPT_DIR/templates" 2>/dev/null && pwd)" ] && continue
+      EXPANDED+=("$d")
+      found=1
+    done < <(find "$p" -maxdepth 3 -name AGENTS.md -type f \
+               -not -path "*/node_modules/*" -not -path "*/.git/*" \
+               -not -path "*/dist/*" -not -path "*/build/*" \
+               -not -path "*/.next/*" -not -path "*/vendor/*" 2>/dev/null | sort)
+    [ "$found" -eq 0 ] && EXPANDED+=("$p")  # nothing under it; let the loop say so
+  fi
+done
+# de-duplicate, preserving order
+PROJECTS=()
+for p in ${EXPANDED[@]+"${EXPANDED[@]}"}; do
+  seen=0
+  for q in ${PROJECTS[@]+"${PROJECTS[@]}"}; do [ "$q" = "$p" ] && seen=1 && break; done
+  [ "$seen" -eq 0 ] && PROJECTS+=("$p")
+done
 
 stamp_of() { grep -m1 'dsh-setup-template-version:' "$1" 2>/dev/null | awk '{print $3}'; }
 

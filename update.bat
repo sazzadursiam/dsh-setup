@@ -5,11 +5,17 @@ title dsh + Figma Update
 REM Update an existing dsh + Figma setup on Windows.
 REM
 REM   update.bat                          pull + update dsh
-REM   update.bat C:\projects\site ...     also check those projects' AGENTS.md
+REM   update.bat C:\projects              scan that folder for projects
+REM   update.bat C:\projects\site         check one project
 REM   update.bat --skip-dsh               pull only, leave the npm package alone
 REM
-REM Project paths can also be listed one per line in projects.txt next to this
-REM script (git-ignored), so plain `update.bat` checks them every time.
+REM A path holding an AGENTS.md is treated as a project. A path that does not is
+REM treated as a folder containing projects, and every AGENTS.md up to two levels
+REM under it is found - so point this at your projects root once and new projects
+REM are picked up automatically.
+REM
+REM Paths can also be listed one per line in projects.txt next to this script
+REM (git-ignored), so plain `update.bat` checks them every time.
 
 set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
@@ -28,6 +34,15 @@ if not defined PROJECTS if exist "%SCRIPT_DIR%\projects.txt" (
     for /f "usebackq eol=# delims=" %%p in ("%SCRIPT_DIR%\projects.txt") do (
         if not "%%p"=="" set "PROJECTS=!PROJECTS! "%%p""
     )
+)
+
+REM A path holding an AGENTS.md is a project. A path that does not is treated as
+REM a folder *containing* projects, and every AGENTS.md up to two levels under it
+REM is picked up - so a new project needs no bookkeeping, it is found next run.
+set "PLIST=%TEMP%\dsh-update-%RANDOM%%RANDOM%.txt"
+type nul > "%PLIST%"
+if defined PROJECTS (
+    for %%p in (!PROJECTS!) do call :expand "%%~p"
 )
 
 set "TPL=%SCRIPT_DIR%\templates\AGENTS.md"
@@ -100,15 +115,16 @@ set "NEW_TPL="
 for /f "tokens=3" %%v in ('findstr /c:"dsh-setup-template-version:" "%TPL%" 2^>nul') do set "NEW_TPL=%%v"
 
 if not defined PROJECTS (
-    echo   [INFO] No projects given - pass paths, or list them in projects.txt
-    echo            update.bat C:\Users\me\projects\my-site
+    echo   [INFO] No projects given - pass a folder, or list folders in projects.txt
+    echo            update.bat C:\Users\me\projects          ^(scans it for projects^)
+    echo            update.bat C:\Users\me\projects\my-site  ^(one project^)
     if not "!OLD_TPL!"=="!NEW_TPL!" (
         echo   [WARN] The template moved v!OLD_TPL! -^> v!NEW_TPL!, so your copies are now behind.
     )
 ) else (
     set STALE=0
-    for %%p in (!PROJECTS!) do (
-        set "P=%%~p"
+    for /f "usebackq delims=" %%p in ("%PLIST%") do (
+        set "P=%%p"
         if not exist "!P!\" (
             echo   [WARN] !P! - not a directory
         ) else if not exist "!P!\AGENTS.md" (
@@ -145,8 +161,47 @@ echo   - Update %%USERPROFILE%%\.dsh\settings.yaml. Model choice, reasoning
 echo     effort and API keys are per-machine and live outside this repo.
 echo ============================================
 echo.
+if exist "%PLIST%" del "%PLIST%" >nul 2>&1
 pause
 exit /b 0
+
+REM ---------- helpers ----------
+
+REM :expand <path>  - decide whether it is a project or a folder of projects
+:expand
+set "AP=%~1"
+if not exist "!AP!\" (
+    call :emit "!AP!"
+    goto :eof
+)
+if exist "!AP!\AGENTS.md" (
+    call :emit "!AP!"
+    goto :eof
+)
+set "FOUNDANY="
+for /d %%d in ("!AP!\*") do (
+    if exist "%%~fd\AGENTS.md" (
+        call :emit "%%~fd"
+        set FOUNDANY=1
+    )
+    for /d %%e in ("%%~fd\*") do (
+        if exist "%%~fe\AGENTS.md" (
+            call :emit "%%~fe"
+            set FOUNDANY=1
+        )
+    )
+)
+if not defined FOUNDANY call :emit "!AP!"
+goto :eof
+
+REM :emit <path>  - append unless it is the template folder or already listed
+:emit
+set "EP=%~1"
+if /i "!EP!"=="%SCRIPT_DIR%\templates" goto :eof
+findstr /x /i /c:"!EP!" "%PLIST%" >nul 2>&1
+if not errorlevel 1 goto :eof
+>>"%PLIST%" echo !EP!
+goto :eof
 
 :nodir
 echo   [FAIL] Cannot enter %SCRIPT_DIR%

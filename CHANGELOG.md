@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **`update.sh` / `update.bat` now take a folder and find the projects inside
+  it**, instead of needing every project listed by hand. A path holding an
+  `AGENTS.md` is a project; a path that does not is scanned two levels deep for
+  them, skipping `node_modules`, `.git`, `dist`, `build`, `.next` and `vendor`.
+
+  The old behaviour did not scale: every new project had to be remembered and
+  added to `projects.txt`, and one you forgot would sit silently on an outdated
+  `AGENTS.md` — exactly the failure this tool exists to prevent. Now
+  `echo ~/projects > projects.txt` is set once and new projects are picked up on
+  the next run.
+
+  Results are de-duplicated, so passing a folder *and* a project inside it is
+  harmless, and the repo's own `templates/` directory is never mistaken for a
+  project copy.
+
 ## [0.3.2] — 2026-09-09
 
 ### Changed

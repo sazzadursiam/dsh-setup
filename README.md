@@ -75,12 +75,21 @@ git pull
 ./update.sh          # update.bat on Windows
 ```
 
-Pass your project folders — or list them once in `projects.txt` (git-ignored)
-and plain `update.sh` checks them every time:
+**Point it at your projects root, not at each project.** A path holding an
+`AGENTS.md` is treated as a project; a path that does not is scanned for them,
+two levels deep. So new projects are picked up on the next run with no
+bookkeeping:
 
 ```
-./update.sh ~/projects/my-site ~/projects/other
-printf '%s\n' ~/projects/my-site > projects.txt
+./update.sh ~/projects                    # finds every project under it
+./update.sh ~/projects/my-site            # or name one directly
+```
+
+Set it once in `projects.txt` (git-ignored) and plain `update.sh` does it every
+time:
+
+```
+echo ~/projects > projects.txt
 ```
 
 **Why it only reports, never rewrites:** each project has its own copy of
