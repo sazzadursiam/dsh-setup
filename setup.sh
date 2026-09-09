@@ -70,7 +70,22 @@ else
   case "$OS" in
     mac)   brew install git || die "brew install git failed." ;;
     linux)
-      sudo apt-get update -qq && sudo apt-get install -y git || die "apt install git failed."
+      # Node comes from nvm, which is distro-agnostic; git has to come from
+      # whatever package manager this distro actually ships.
+      if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update -qq && sudo apt-get install -y git
+      elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y git
+      elif command -v pacman >/dev/null 2>&1; then
+        sudo pacman -Sy --noconfirm git
+      elif command -v zypper >/dev/null 2>&1; then
+        sudo zypper --non-interactive install git
+      elif command -v apk >/dev/null 2>&1; then
+        sudo apk add git
+      else
+        die "No supported package manager found (apt-get, dnf, pacman, zypper, apk).
+Install git with your distro's tool, then run this again."
+      fi || die "git install failed. Install it by hand, then run this again."
       ;;
   esac
   ok "Installed $(git --version | awk '{print $3}')"

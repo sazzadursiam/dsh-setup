@@ -1,7 +1,5 @@
 # DeepSeek Harness (dsh) — Local Setup Guide
 
-> **বাংলা:** [`SETUP.bn.md`](SETUP.bn.md)
-
 **Created:** September 2026
 **Environment:** Windows · macOS · Linux/Ubuntu (macOS instructions: Part 2; Linux Figma limitations: Part 3)
 **Status:** dsh is still a developer preview — breaking changes may arrive
@@ -44,11 +42,15 @@ Important: **the harness is local, the model is not.** API calls go to DeepSeek 
 
 > **A word about terminals:** PowerShell blocks script execution by default, so `npm`/`npx` throw errors (`.ps1 cannot be loaded`). The least-friction path is **cmd** (Win+R → `cmd`). If you prefer PowerShell, run this once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
 
-### Step 1: Node.js
+### Step 1: Node.js and Git
 
 ```powershell
 winget install OpenJS.NodeJS.LTS
+winget install Git.Git
 ```
+
+Git is needed to clone this repo, and again in Part 7 — `git init` per project is
+what lets you review and undo what the agent changes.
 
 **After installing, close PowerShell and open a new one.** Otherwise PATH will not update.
 
@@ -57,9 +59,10 @@ Verify:
 ```powershell
 node -v
 npm -v
+git --version
 ```
 
-If both print version numbers, you are good.
+If all three print version numbers, you are good.
 
 ### Step 2: Install dsh
 
@@ -67,7 +70,17 @@ If both print version numbers, you are good.
 npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
 ```
 
-The `--allow-scripts` part is essential. `node-pty` and `koffi` build native binaries; without them the shell/terminal tools will not work. **Do not remove it** — starting with npm 12, install scripts are disabled by default, so without this allowlist the native modules are never built (error: `Failed to load native module`).
+The `--allow-scripts` part is essential. `node-pty` and `koffi` compile native binaries in an install script, and the shell/terminal tools do not work without them. **Do not remove it** — npm will not run a dependency's install scripts unless that package is allowlisted, so the native modules are silently never built (error: `Failed to load native module`).
+
+<details>
+<summary>Why npm needs telling</summary>
+
+Checked against npm 11.17.0: `allow-scripts` is empty by default and
+`dangerously-allow-all-scripts` is `false`, so an unlisted package's scripts are
+skipped. `npm approve-scripts` and `npm deny-scripts` manage the same list
+interactively if you would rather not pass the flag each time.
+
+</details>
 
 Just want to try it without installing:
 
@@ -579,6 +592,14 @@ verify.bat          # Windows
 ```
 
 > **Note (Windows):** running verify in the **same window** after `setx` shows a false `[FAIL]` on `FIGMA_ACCESS_TOKEN` — `setx` only affects new terminals. Close the window, open a new cmd, and run it again.
+
+Pass a project folder to also check whether its `AGENTS.md` has fallen behind
+the template — worth doing when the agent ignores a rule you know you wrote:
+
+```
+verify.bat C:\Users\me\projects\my-site
+./verify.sh ~/projects/my-site
+```
 
 Then use the table below.
 

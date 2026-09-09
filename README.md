@@ -4,7 +4,7 @@ Get [DeepSeek Harness](https://www.deepseek.com/harness/en/) talking to Figma �
 
 Install scripts, a working MCP config, and the dead ends documented so you don't repeat them.
 
-> **বাংলা:** [`README.bn.md`](README.bn.md) · পূর্ণ গাইড [`SETUP.bn.md`](SETUP.bn.md) · **English guide:** [`SETUP.md`](SETUP.md)
+> **Full guide:** [`SETUP.md`](SETUP.md)
 
 ## What this gets you
 
@@ -33,6 +33,14 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
+**No Git yet?** These commands start with `git clone`, but Git is one of the
+things the script installs — so on a fresh machine, get the code first by either
+route:
+
+- Download the ZIP from the repo page (**Code → Download ZIP**) and unpack it, or
+- `winget install Git.Git` on Windows / `brew install git` on macOS, open a new
+  terminal, then clone as above.
+
 The script installs Node.js, Git and dsh. It prints the remaining manual steps when it finishes.
 
 On Windows, if the script installs Node or Git, it stops and asks you to reopen the terminal — Windows only picks up new PATH entries in a fresh one.
@@ -55,6 +63,16 @@ Already set up? One command pulls this repo, updates dsh with the right
 ```
 update.bat          # Windows
 ./update.sh         # macOS / Linux
+```
+
+**First time on an older clone?** These scripts arrived in v0.3.0, so a clone
+made before that does not have them yet. Pull once by hand to get them, then use
+them from then on:
+
+```
+cd dsh-setup
+git pull
+./update.sh          # update.bat on Windows
 ```
 
 Pass your project folders — or list them once in `projects.txt` (git-ignored)
@@ -114,9 +132,7 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 
 | File                       | Purpose                                                 |
 | -------------------------- | ------------------------------------------------------- |
-| `README.bn.md`             | This page in Bengali                                    |
 | `SETUP.md`                 | Full guide (English) — setup, workflow, troubleshooting |
-| `SETUP.bn.md`              | Full guide (Bengali) — setup, workflow, troubleshooting |
 | `setup.bat` / `setup.sh`   | Install scripts                                         |
 | `update.bat` / `update.sh` | Update an existing setup, and flag stale `AGENTS.md`    |
 | `verify.bat` / `verify.sh` | Check what is set up and what is missing                |

@@ -2,6 +2,43 @@
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-09-09
+
+### Fixed
+
+- **Part 1 never installed Git.** It set up Node only, while Part 2 (macOS)
+  installed `node git` together and Part 7 then asked for `git init`. Step 1 is
+  now "Node.js and Git" — folded into the existing step rather than inserted as
+  a new one, so no step numbers or cross-references shift.
+- **The quick start opened with `git clone` on a machine that may not have Git**
+  — which the setup script is what installs. The README now offers the ZIP
+  download or a one-line Git install first.
+- **`setup.sh` installed Git through `apt-get` only**, despite claiming to
+  support "other Linux distros"; Node already came from distro-agnostic nvm.
+  It now detects `apt-get`, `dnf`, `pacman`, `zypper` or `apk`, and says which
+  ones it looked for when none is found.
+- **Removed the claim that "starting with npm 12, install scripts are disabled
+  by default".** There is no npm 12. Verified against npm 11.17.0: the behavior
+  is real but comes from `allow-scripts` being empty by default with
+  `dangerously-allow-all-scripts` off. Reworded, with a pointer to
+  `npm approve-scripts`.
+- **The update scripts could not deliver themselves.** `update.sh` /
+  `update.bat` shipped in 0.3.0, so any clone made earlier does not have them —
+  running one is a "command not found" until you have already updated. Both
+  READMEs now tell you to `git pull` by hand once, and use the script from then
+  on. Same bootstrapping shape as the `git clone` fix above.
+- Part 8 (troubleshooting) now points at `verify <project-dir>` for the case
+  where the agent ignores a rule you know you wrote — usually a stale
+  `AGENTS.md` copy.
+### Removed
+
+- **The Bengali translations (`README.bn.md`, `SETUP.bn.md`) are no longer part
+  of the repo.** Keeping them in meant every documentation change had to be
+  written twice, and the two languages had already drifted apart. They are now
+  maintained locally only; `*.bn.md` is git-ignored, and the pointers to them in
+  `README.md` and `SETUP.md` are gone. Earlier tags and history still contain
+  them — this stops future updates, it does not unpublish what was released.
+
 ## [0.3.0] — 2026-09-09
 
 ### Added
@@ -47,7 +84,7 @@
   `cmd.exe` stops misparsing labels and `if` blocks.
 - `npm update -g` advice replaced with the full `--allow-scripts` install
   command — `npm update` does not re-apply the allowlist and leaves native
-  modules unbuilt (npm 12 issue).
+  modules unbuilt.
 - Broken `AGENTS.md` copy path in `SETUP.md`, Bengali characters inside a
   `setx` placeholder, missing `mkdir` before the config copy, and
   `taskkill /IM node.exe /F` no longer presented as the normal stop command.
