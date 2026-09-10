@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
 # Update an existing dsh + Figma setup on macOS or Linux.
 #
-#   ./update.sh                      pull + update dsh
-#   ./update.sh ~/projects           scan that folder for projects and check them
-#   ./update.sh ~/projects/site      check one project
-#   ./update.sh --skip-dsh           pull only, leave the npm package alone
+#   ./update.sh                        pull, update dsh, rewrite the agent rules
+#   ./update.sh --skip-dsh             pull only, leave the npm package alone
+#   ./update.sh --role=figma           also change which role blocks this machine gets
 #
-# A path holding an AGENTS.md is treated as a project. A path that does not is
-# treated as a folder containing projects, and every AGENTS.md up to two levels
-# under it is found — so point this at your projects root once and new projects
-# are picked up automatically.
-#
-# Paths can also be listed one per line in `projects.txt` next to this script
-# (git-ignored), so plain `./update.sh` checks them every time.
+# Nothing here touches your projects. The shared agent rules live in one file per
+# machine, ~/.dsh/AGENTS.md, which dsh loads into every session automatically —
+# so there are no per-project copies to fall behind.
 set -uo pipefail
 
 BOLD=$'\033[1m'; DIM=$'\033[2m'; RED=$'\033[31m'; GREEN=$'\033[32m'; YEL=$'\033[33m'; OFF=$'\033[0m'
@@ -28,56 +23,15 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR" || die "Cannot enter $SCRIPT_DIR"
 
 SKIP_DSH=0
-PROJECTS=()
+ROLE_ARG=""
 for arg in "$@"; do
   case "$arg" in
     --skip-dsh) SKIP_DSH=1 ;;
+    --role=*)   ROLE_ARG="$arg" ;;
     -h|--help)  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-    *)          PROJECTS+=("$arg") ;;
+    *)          die "Unknown argument: $arg   (try --help)" ;;
   esac
 done
-
-if [ ${#PROJECTS[@]} -eq 0 ] && [ -f "$SCRIPT_DIR/projects.txt" ]; then
-  while IFS= read -r line; do
-    case "$line" in ''|\#*) continue ;; esac
-    PROJECTS+=("$line")
-  done < "$SCRIPT_DIR/projects.txt"
-fi
-
-# A path holding an AGENTS.md is a project. A path that does not is treated as a
-# folder *containing* projects, and every AGENTS.md up to two levels under it is
-# picked up — so a new project needs no bookkeeping, it is found on the next run.
-EXPANDED=()
-for raw in ${PROJECTS[@]+"${PROJECTS[@]}"}; do
-  p="${raw/#\~/$HOME}"
-  if [ ! -d "$p" ]; then
-    EXPANDED+=("$p")                       # keep it; the check loop reports why
-  elif [ -f "$p/AGENTS.md" ]; then
-    EXPANDED+=("$p")
-  else
-    found=0
-    while IFS= read -r hit; do
-      d="$(dirname "$hit")"
-      # never treat this repo's own template as a project copy
-      [ "$(cd "$d" 2>/dev/null && pwd)" = "$(cd "$SCRIPT_DIR/templates" 2>/dev/null && pwd)" ] && continue
-      EXPANDED+=("$d")
-      found=1
-    done < <(find "$p" -maxdepth 3 -name AGENTS.md -type f \
-               -not -path "*/node_modules/*" -not -path "*/.git/*" \
-               -not -path "*/dist/*" -not -path "*/build/*" \
-               -not -path "*/.next/*" -not -path "*/vendor/*" 2>/dev/null | sort)
-    [ "$found" -eq 0 ] && EXPANDED+=("$p")  # nothing under it; let the loop say so
-  fi
-done
-# de-duplicate, preserving order
-PROJECTS=()
-for p in ${EXPANDED[@]+"${EXPANDED[@]}"}; do
-  seen=0
-  for q in ${PROJECTS[@]+"${PROJECTS[@]}"}; do [ "$q" = "$p" ] && seen=1 && break; done
-  [ "$seen" -eq 0 ] && PROJECTS+=("$p")
-done
-
-stamp_of() { grep -m1 'dsh-setup-template-version:' "$1" 2>/dev/null | awk '{print $3}'; }
 
 say ""
 say "${BOLD}============================================${OFF}"
@@ -90,7 +44,6 @@ say "${BOLD}[1/3]${OFF} Updating this repo..."
 command -v git >/dev/null 2>&1 || die "git not found."
 git rev-parse --git-dir >/dev/null 2>&1 || die "$SCRIPT_DIR is not a git clone. Re-clone the repo to get updates."
 
-OLD_TPL="$(stamp_of "$SCRIPT_DIR/templates/AGENTS.md")"
 OLD_HEAD="$(git rev-parse HEAD 2>/dev/null)"
 
 if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
@@ -129,53 +82,29 @@ else
 fi
 say ""
 
-# ---------- 3. project AGENTS.md copies ----------
-say "${BOLD}[3/3]${OFF} Checking project AGENTS.md copies..."
-TPL="$SCRIPT_DIR/templates/AGENTS.md"
-NEW_TPL="$(stamp_of "$TPL")"
-
-if [ ${#PROJECTS[@]} -eq 0 ]; then
-  info "No projects given - pass paths, or list them in projects.txt"
-  hint "  ./update.sh ~/projects/my-site"
-  hint "  printf '%s\\n' ~/projects/my-site > projects.txt"
-  [ -n "$OLD_TPL" ] && [ "$OLD_TPL" != "$NEW_TPL" ] && \
-    warn "The template moved v$OLD_TPL -> v$NEW_TPL, so your copies are now behind."
+# ---------- 3. the shared agent rules ----------
+say "${BOLD}[3/3]${OFF} Rewriting the shared agent rules..."
+if [ ! -x "$SCRIPT_DIR/agents.sh" ] && [ ! -f "$SCRIPT_DIR/agents.sh" ]; then
+  warn "agents.sh is missing from this checkout - skipping"
 else
-  STALE=0
-  for p in "${PROJECTS[@]}"; do
-    p="${p/#\~/$HOME}"
-    if [ ! -d "$p" ]; then
-      warn "$p - not a directory"
-    elif [ ! -f "$p/AGENTS.md" ]; then
-      warn "$p - no AGENTS.md"
-      hint "cp \"$TPL\" \"$p/\""
-      STALE=$((STALE+1))
-    else
-      V="$(stamp_of "$p/AGENTS.md")"
-      if [ "$V" = "$NEW_TPL" ]; then
-        ok "$p (v$V)"
-      else
-        if [ -n "$V" ]; then SHOWV="v$V"; else SHOWV="unstamped"; fi
-        warn "$p - $SHOWV vs template v$NEW_TPL"
-        hint "diff \"$p/AGENTS.md\" \"$TPL\""
-        STALE=$((STALE+1))
-      fi
-    fi
-  done
-  if [ "$STALE" -gt 0 ]; then
-    say ""
-    say "  ${YEL}$STALE project(s) need attention.${OFF}"
-    say "  Copy the changed sections across by hand - do ${BOLD}not${OFF} overwrite the"
-    say "  whole file, or you lose everything under '## Project specifics'."
+  # agents.sh reuses the roles already recorded in the generated file, so this
+  # is silent on every run after the first.
+  if [ -n "$ROLE_ARG" ]; then
+    bash "$SCRIPT_DIR/agents.sh" "$ROLE_ARG" || warn "Could not write the agent rules - see above"
+  else
+    bash "$SCRIPT_DIR/agents.sh" || warn "Could not write the agent rules - see above"
   fi
 fi
 
 say ""
 say "${BOLD}============================================${OFF}"
 say "  Done. Two things this cannot do for you:"
-say "  - ${BOLD}Restart your sessions.${OFF} Changed AGENTS.md rules only reach a"
-say "    session started afterwards."
+say "  - ${BOLD}Restart your sessions.${OFF} Changed rules only reach a session"
+say "    started afterwards - there is no file watcher."
 say "  - ${BOLD}Update ~/.dsh/settings.yaml.${OFF} Model choice, reasoning effort and"
 say "    API keys are per-machine and live outside this repo."
+say ""
+say "  ${DIM}Project-specific rules live in each project's own AGENTS.md and are${OFF}"
+say "  ${DIM}yours to maintain - see templates/project.example.md.${OFF}"
 say "${BOLD}============================================${OFF}"
 say ""

@@ -1,23 +1,84 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.0] — 2026-09-10
+
+**Breaking.** The agent rules move out of your projects and into one file per
+machine. See `SETUP.md` Part 10 for the migration — it is two commands plus a
+trim, and nothing breaks if you delay it.
 
 ### Changed
 
-- **`update.sh` / `update.bat` now take a folder and find the projects inside
-  it**, instead of needing every project listed by hand. A path holding an
-  `AGENTS.md` is a project; a path that does not is scanned two levels deep for
-  them, skipping `node_modules`, `.git`, `dist`, `build`, `.next` and `vendor`.
+- **Shared agent rules now live in `~/.dsh/AGENTS.md`, not in a copy inside
+  every project.** dsh loads that file into every session of every project
+  automatically, before any project's own `AGENTS.md`
+  (`@deepseek-ai/dsh-agent-instructions`, which `dsh-base` mounts by default).
 
-  The old behaviour did not scale: every new project had to be remembered and
-  added to `projects.txt`, and one you forgot would sit silently on an outdated
-  `AGENTS.md` — exactly the failure this tool exists to prevent. Now
-  `echo ~/projects > projects.txt` is set once and new projects are picked up on
-  the next run.
+  Copying a template into each project never worked, and three releases were
+  spent patching around that. Every copy drifts the moment you fill in
+  `## Project specifics` or delete a role block you don't need, so the repo can
+  never safely overwrite one. 0.3.0 added version stamps and staleness
+  reporting; 0.3.2 added folder scanning to find the copies. Both made the
+  reporting better without changing the fact that re-applying every template
+  change was manual work, repeated per project, forever — and growing with the
+  number of projects.
 
-  Results are de-duplicated, so passing a folder *and* a project inside it is
-  harmless, and the repo's own `templates/` directory is never mistaken for a
-  project copy.
+  With no copies there is nothing to drift. Updating three machines is now
+  writing one file on each, and adding a project costs nothing.
+
+  A 3-way merge was prototyped first (`git merge-file`, base = the template at
+  the copy's stamp). It merged cleanly when only `## Project specifics` had been
+  filled in, but conflicted when a role block had been deleted *and* a rule
+  added mid-file. It solved the symptom; this removes the cause.
+
+- **`templates/AGENTS.md` is split into `templates/core.md` and
+  `templates/roles/{figma,design-to-code,visual-assets}.md`**, assembled at
+  install time. Which roles a machine gets is a property of the person using it,
+  not of the repo, so it is asked once and remembered — no more "delete the
+  blocks you don't use", which only works if nobody forgets.
+
+- **The templates no longer carry one user's language or model list.** The old
+  `AGENTS.md` opened with "Reply in Bengali" and named specific providers in the
+  model-escalation section — fine when you copied and edited the file, wrong now
+  that it is generated and public. The reply language is a remembered setting
+  (`--lang`, default English), the escalation section talks about picking from
+  your configured providers without naming any, and account-specific notes move
+  to `local.md`.
+
+- **`update.sh` / `update.bat` no longer take project paths.** Step 3 rewrites
+  the shared rules instead of hunting for stale copies. The folder scanning,
+  `projects.txt` support and stale-copy report are gone — about half of
+  `update.bat`.
+
+- **`verify.sh` / `verify.bat` no longer take a project directory.** They report
+  whether `~/.dsh/AGENTS.md` exists and whether it came from this checkout.
+
+- `setup.sh` / `setup.bat` install the rules as part of setup, so "copy
+  AGENTS.md into each project folder" is no longer a manual step.
+
+### Added
+
+- **`agents.sh` / `agents.bat`** — writes `~/.dsh/AGENTS.md`. Takes
+  `--role=figma,design-to-code` (or `--role=none`), `--lang=<language>`,
+  `--show`, or nothing at all, in which case it reuses the roles and language
+  recorded in the generated file's first line. Those are stored there rather
+  than in a separate state file, so nothing new is added to `~/.dsh/`, which
+  otherwise holds credentials. It writes only that one file, and backs up
+  anything it did not generate before replacing it.
+- **`local.md`** (git-ignored, from `templates/local.example.md`) — machine- and
+  account-specific rules, appended to `~/.dsh/AGENTS.md` verbatim and never
+  parsed. This is where the provider and off-peak notes that used to sit in the
+  template now live, and it survives every update.
+- **`templates/project.example.md`** — a starting point for a project's own
+  `AGENTS.md`, which is now for project-specific rules only.
+- **`templates/roles/index.txt`** — the role list, so adding a role is a new
+  `.md` file plus one line, with no script changes.
+- **`VERSION`** — single source of truth for the version stamp, read by
+  `agents.*` and `verify.*`.
+
+### Removed
+
+- `templates/AGENTS.md`, and the per-project version-stamp mechanism it carried.
+- The `projects.txt` convention and its `.gitignore` entry.
 
 ## [0.3.2] — 2026-09-09
 

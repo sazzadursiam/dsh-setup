@@ -9,6 +9,8 @@ ok()   { printf '%s      %s\n' "$GREEN✓$OFF" "$*"; }
 warn() { printf '%s      %s\n' "$YEL!$OFF" "$*"; }
 die()  { printf '\n%sSETUP FAILED%s\n\n%s\n\n' "$RED" "$OFF" "$*"; exit 1; }
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # ---------- detect platform ----------
 OS="unknown"
 case "$(uname -s)" in
@@ -101,6 +103,18 @@ ok "dsh installed"
 
 say ""
 
+# ---------- agent rules ----------
+# One file per machine at ~/.dsh/AGENTS.md, which dsh loads into every session
+# of every project. Asks once which roles this machine works in.
+say "${BOLD}[+]${OFF} Setting up the shared agent rules..."
+if [ -f "$SCRIPT_DIR/agents.sh" ]; then
+  bash "$SCRIPT_DIR/agents.sh" || warn "Could not write the agent rules - run ./agents.sh by hand"
+else
+  warn "agents.sh is missing from this checkout - skipping"
+fi
+
+say ""
+
 # ---------- done ----------
 say "${BOLD}============================================${OFF}"
 say "${BOLD}${GREEN}  INSTALL COMPLETE${OFF}"
@@ -131,13 +145,13 @@ if [ "$OS" = "mac" ]; then
   say ""
   say "  5. Run the \"Figma Desktop Bridge\" plugin in your Figma file."
   say "     Wait for the green \"Connected\" status."
-  say ""
-  say "  6. Copy AGENTS.md into each project folder you work in."
 else
   say "  4. ${YEL}Figma write access is not available on Linux.${OFF}"
   say "     Read-only Figma tools still work via your PAT."
   say "     For design creation, use a Windows or Mac machine."
-  say ""
-  say "  5. Copy AGENTS.md into each project folder you work in."
 fi
+say ""
+say "  ${DIM}The shared agent rules are already installed at ~/.dsh/AGENTS.md and${OFF}"
+say "  ${DIM}apply to every project. Per-project rules go in that project's own${OFF}"
+say "  ${DIM}AGENTS.md - see templates/project.example.md.${OFF}"
 say ""

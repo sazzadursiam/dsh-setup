@@ -46,8 +46,9 @@ Desktop.ini
 *.orig
 
 # ---- Local ----
-# Your own project paths for update.sh / update.bat. Machine-specific.
-projects.txt
+# Your own machine-specific agent rules, appended to ~/.dsh/AGENTS.md by
+# agents.sh / agents.bat. Yours, not shipped. See templates/local.example.md.
+local.md
 
 # Bengali translations are maintained locally, not shipped. Keeping them in the
 # repo meant every doc change had to be made twice.

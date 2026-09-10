@@ -51,14 +51,61 @@ On Windows, if the script installs Node or Git, it stops and asks you to reopen 
 2. **Copy the MCP config:** `cordis.patch.yml` → your dsh profile
 3. **Run `dsh web`**, then add your Anthropic API key under Settings → Models
 4. **Import the bridge plugin** into Figma Desktop
-5. **Copy `templates/AGENTS.md`** into each project folder
 
 Full detail in `SETUP.md`.
 
+## Agent rules
+
+dsh loads `~/.dsh/AGENTS.md` into **every session of every project**, before any
+project's own `AGENTS.md`. So the shared rules — how to reply, how to research,
+what not to touch, when to escalate the model — live in that one file per
+machine. Nothing is copied into your projects, so there is nothing to go stale.
+
+`setup` writes it for you. To change it later:
+
+```
+agents.bat --role=figma,design-to-code     # Windows
+./agents.sh --role=figma,design-to-code    # macOS / Linux
+./agents.sh --lang=Bengali                 # reply language
+./agents.sh --show                         # what is installed right now
+```
+
+**Language** defaults to English. Set `--lang` for anything else — it is
+remembered like roles, and it is the way to get replies in a script when you
+type in a romanised form. (In `agents.bat`, `--lang` takes the rest of the line,
+so put it last.)
+
+**Roles pick which extra rule blocks you get**, because a machine used for
+Photoshop work should not be reading Figma tool rules at the start of every
+session:
+
+| Role | For |
+| ------------------ | ---------------------------------------------- |
+| `figma`            | Reading and writing Figma via the bridge plugin |
+| `design-to-code`   | Building frontend code from Figma designs       |
+| `visual-assets`    | Photoshop and Illustrator work                  |
+
+You are asked once and it is remembered, so plain `./agents.sh` regenerates with
+the same roles. Edits to `~/.dsh/AGENTS.md` are overwritten on the next update —
+to change the shared rules, edit `templates/core.md` or `templates/roles/*.md`.
+
+**For rules that are true of your machine or account** — the providers you
+actually pay for, an internal proxy, a folder outside your projects — copy
+`templates/local.example.md` to `local.md` in the repo root (git-ignored). It is
+appended to `~/.dsh/AGENTS.md` verbatim and survives every update. The templates
+stay provider-neutral so they are useful to everyone; `local.md` is where you get
+specific. No credentials in it — it lands in every session's context.
+
+**Project-specific rules go in that project's own `AGENTS.md`**, committed to
+that project's repo. This repo never touches it. Start from
+`templates/project.example.md`, and keep it short — it is read at the start of
+every session. A rule a *project* must obey belongs there, not in the global
+file: the global file is per-machine and does not travel with a clone.
+
 ## Updating
 
-Already set up? One command pulls this repo, updates dsh with the right
-`--allow-scripts` allowlist, and tells you which projects need attention:
+One command pulls this repo, updates dsh with the right `--allow-scripts`
+allowlist, and rewrites your agent rules:
 
 ```
 update.bat          # Windows
@@ -75,32 +122,10 @@ git pull
 ./update.sh          # update.bat on Windows
 ```
 
-**Point it at your projects root, not at each project.** A path holding an
-`AGENTS.md` is treated as a project; a path that does not is scanned for them,
-two levels deep. So new projects are picked up on the next run with no
-bookkeeping:
-
-```
-./update.sh ~/projects                    # finds every project under it
-./update.sh ~/projects/my-site            # or name one directly
-```
-
-Set it once in `projects.txt` (git-ignored) and plain `update.sh` does it every
-time:
-
-```
-echo ~/projects > projects.txt
-```
-
-**Why it only reports, never rewrites:** each project has its own copy of
-`AGENTS.md`, and yours has a `## Project specifics` section this repo knows
-nothing about. Overwriting would destroy it. The script compares version stamps
-and points you at a `diff`; you copy across what changed.
-
 Two things no script can do for you: **restart your sessions** (changed rules
-only reach a session started afterwards), and **update `~/.dsh/settings.yaml`**
-— model choice, reasoning effort and API keys are per-machine and live outside
-this repo.
+only reach a session started afterwards — there is no file watcher), and
+**update `~/.dsh/settings.yaml`** — model choice, reasoning effort and API keys
+are per-machine and live outside this repo.
 
 ## Something not working?
 
@@ -111,13 +136,7 @@ verify.bat          # Windows
 ./verify.sh         # macOS / Linux
 ```
 
-Run it **from a project folder**, or pass one, and it also checks whether that
-project's `AGENTS.md` has fallen behind the template:
-
-```
-verify.bat C:\Users\me\projects\my-site
-./verify.sh ~/projects/my-site
-```
+It also reports whether your agent rules are installed and current.
 
 ## Why not the official Figma MCP server
 
@@ -133,23 +152,28 @@ This repo uses [`figma-console-mcp`](https://github.com/southleft/figma-console-
 
 **The screenshot tools are broken in Local Mode.** `figma_capture_screenshot` and `figma_take_screenshot` fail with `Cannot read properties of undefined (reading 'bytes')`. Worse, one failed call poisons the session — every later turn throws the same error even with no tool call, and the only fix is a new session.
 
-This is upstream: the CDP transport those tools relied on was removed from Local Mode. `templates/AGENTS.md` keeps agents away from them, which is why copying it into each project matters.
+This is upstream: the CDP transport those tools relied on was removed from Local Mode. The `figma` role block keeps agents away from them, which is why it is worth having in your rules if you touch Figma at all.
 
 **No Figma write access on Linux.** No desktop app means no bridge plugin. Use Windows or macOS for design work.
 
 ## Files
 
-| File                       | Purpose                                                 |
-| -------------------------- | ------------------------------------------------------- |
-| `SETUP.md`                 | Full guide (English) — setup, workflow, troubleshooting |
-| `setup.bat` / `setup.sh`   | Install scripts                                         |
-| `update.bat` / `update.sh` | Update an existing setup, and flag stale `AGENTS.md`    |
-| `verify.bat` / `verify.sh` | Check what is set up and what is missing                |
-| `cordis.patch.yml`         | MCP server config — copy into your dsh profile          |
-| `templates/AGENTS.md`      | Agent rules — copy into each project folder             |
-| `.env.example`             | Which environment variables you need                    |
-| `CHANGELOG.md`             | What changed and why                                    |
-| `LICENSE`                  | MIT                                                     |
+| File                          | Purpose                                                    |
+| ----------------------------- | ---------------------------------------------------------- |
+| `SETUP.md`                    | Full guide (English) — setup, workflow, troubleshooting    |
+| `setup.bat` / `setup.sh`      | Install scripts                                            |
+| `update.bat` / `update.sh`    | Update an existing setup                                   |
+| `agents.bat` / `agents.sh`    | Write the shared agent rules to `~/.dsh/AGENTS.md`         |
+| `verify.bat` / `verify.sh`    | Check what is set up and what is missing                   |
+| `cordis.patch.yml`            | MCP server config — copy into your dsh profile             |
+| `templates/core.md`           | The shared rules, applied on every project                 |
+| `templates/roles/`            | Optional rule blocks — Figma, design-to-code, visual assets |
+| `templates/project.example.md`| Starting point for a project's own `AGENTS.md`             |
+| `templates/local.example.md`  | Starting point for `local.md` — your machine-specific rules |
+| `.env.example`                | Which environment variables you need                       |
+| `VERSION`                     | What version this checkout is                              |
+| `CHANGELOG.md`                | What changed and why                                       |
+| `LICENSE`                     | MIT                                                        |
 
 ## Secrets
 

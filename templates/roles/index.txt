@@ -1,0 +1,8 @@
+# The roles offered by agents.sh / agents.bat, in prompt order.
+# Format: <slug>|<one-line description>
+# A slug must match a file in this folder: <slug>.md
+#
+# To add a role: drop in <slug>.md and add a line here. Nothing else to change.
+figma|Read and write Figma through the Desktop Bridge
+design-to-code|Build frontend code from Figma designs
+visual-assets|Photoshop and Illustrator work

@@ -4,50 +4,33 @@ title dsh + Figma Update
 
 REM Update an existing dsh + Figma setup on Windows.
 REM
-REM   update.bat                          pull + update dsh
-REM   update.bat C:\projects              scan that folder for projects
-REM   update.bat C:\projects\site         check one project
-REM   update.bat --skip-dsh               pull only, leave the npm package alone
+REM   update.bat                     pull, update dsh, rewrite the agent rules
+REM   update.bat --skip-dsh          pull only, leave the npm package alone
+REM   update.bat --role=figma        also change which role blocks this machine gets
 REM
-REM A path holding an AGENTS.md is treated as a project. A path that does not is
-REM treated as a folder containing projects, and every AGENTS.md up to two levels
-REM under it is found - so point this at your projects root once and new projects
-REM are picked up automatically.
-REM
-REM Paths can also be listed one per line in projects.txt next to this script
-REM (git-ignored), so plain `update.bat` checks them every time.
+REM Nothing here touches your projects. The shared agent rules live in one file
+REM per machine, %USERPROFILE%\.dsh\AGENTS.md, which dsh loads into every session
+REM automatically - so there are no per-project copies to fall behind.
 
 set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 cd /d "%SCRIPT_DIR%" || goto :nodir
 
+REM Parsed from %* as one string: cmd.exe splits arguments on "=" as well as
+REM spaces, so "--role=figma" would not survive a shift-based loop.
 set SKIP_DSH=0
-set PROJECTS=
-:parseargs
-if "%~1"=="" goto :parsed
-if /i "%~1"=="--skip-dsh" (set SKIP_DSH=1) else (set "PROJECTS=!PROJECTS! "%~1"")
-shift
-goto :parseargs
-:parsed
-
-if not defined PROJECTS if exist "%SCRIPT_DIR%\projects.txt" (
-    for /f "usebackq eol=# delims=" %%p in ("%SCRIPT_DIR%\projects.txt") do (
-        if not "%%p"=="" set "PROJECTS=!PROJECTS! "%%p""
+set "ROLE_ARG="
+set "ARGS=%*"
+if defined ARGS (
+    if not "!ARGS!"=="!ARGS:--skip-dsh=!" set SKIP_DSH=1
+    if not "!ARGS!"=="!ARGS:--role==!" (
+        REM The search term cannot contain "=", so the match stops at "--role"
+        REM and leaves the "=" on the front of what remains.
+        set "TAIL=!ARGS:*--role=!"
+        if "!TAIL:~0,1!"=="=" set "TAIL=!TAIL:~1!"
+        for /f "tokens=1 delims= " %%x in ("!TAIL!") do set "ROLE_ARG=--role=%%x"
     )
 )
-
-REM A path holding an AGENTS.md is a project. A path that does not is treated as
-REM a folder *containing* projects, and every AGENTS.md up to two levels under it
-REM is picked up - so a new project needs no bookkeeping, it is found next run.
-set "PLIST=%TEMP%\dsh-update-%RANDOM%%RANDOM%.txt"
-type nul > "%PLIST%"
-if defined PROJECTS (
-    for %%p in (!PROJECTS!) do call :expand "%%~p"
-)
-
-set "TPL=%SCRIPT_DIR%\templates\AGENTS.md"
-set "OLD_TPL="
-for /f "tokens=3" %%v in ('findstr /c:"dsh-setup-template-version:" "%TPL%" 2^>nul') do set "OLD_TPL=%%v"
 
 echo.
 echo ============================================
@@ -109,99 +92,31 @@ if "%SKIP_DSH%"=="1" (
 )
 echo.
 
-REM ---------- 3. project AGENTS.md copies ----------
-echo [3/3] Checking project AGENTS.md copies...
-set "NEW_TPL="
-for /f "tokens=3" %%v in ('findstr /c:"dsh-setup-template-version:" "%TPL%" 2^>nul') do set "NEW_TPL=%%v"
-
-if not defined PROJECTS (
-    echo   [INFO] No projects given - pass a folder, or list folders in projects.txt
-    echo            update.bat C:\Users\me\projects          ^(scans it for projects^)
-    echo            update.bat C:\Users\me\projects\my-site  ^(one project^)
-    if not "!OLD_TPL!"=="!NEW_TPL!" (
-        echo   [WARN] The template moved v!OLD_TPL! -^> v!NEW_TPL!, so your copies are now behind.
-    )
+REM ---------- 3. the shared agent rules ----------
+echo [3/3] Rewriting the shared agent rules...
+if not exist "%SCRIPT_DIR%\agents.bat" (
+    echo   [WARN] agents.bat is missing from this checkout - skipping
 ) else (
-    set STALE=0
-    for /f "usebackq delims=" %%p in ("%PLIST%") do (
-        set "P=%%p"
-        if not exist "!P!\" (
-            echo   [WARN] !P! - not a directory
-        ) else if not exist "!P!\AGENTS.md" (
-            echo   [WARN] !P! - no AGENTS.md
-            echo          copy "%TPL%" "!P!\"
-            set /a STALE+=1
-        ) else (
-            set "V="
-            for /f "tokens=3" %%w in ('findstr /c:"dsh-setup-template-version:" "!P!\AGENTS.md" 2^>nul') do set "V=%%w"
-            if "!V!"=="!NEW_TPL!" (
-                echo   [ OK ] !P! ^(v!V!^)
-            ) else (
-                if "!V!"=="" (set "SHOWV=unstamped") else (set "SHOWV=v!V!")
-                echo   [WARN] !P! - !SHOWV! vs template v!NEW_TPL!
-                echo          fc "!P!\AGENTS.md" "%TPL%"
-                set /a STALE+=1
-            )
-        )
-    )
-    if !STALE! gtr 0 (
-        echo.
-        echo   !STALE! project^(s^) need attention.
-        echo   Copy the changed sections across by hand - do NOT overwrite the
-        echo   whole file, or you lose everything under "## Project specifics".
-    )
+    REM agents.bat reuses the roles already recorded in the generated file, so
+    REM this is silent on every run after the first.
+    call "%SCRIPT_DIR%\agents.bat" !ROLE_ARG!
+    if errorlevel 1 echo   [WARN] Could not write the agent rules - see above
 )
 
 echo.
 echo ============================================
 echo   Done. Two things this cannot do for you:
-echo   - Restart your sessions. Changed AGENTS.md rules only reach
-echo     a session started afterwards.
+echo   - Restart your sessions. Changed rules only reach a session
+echo     started afterwards - there is no file watcher.
 echo   - Update %%USERPROFILE%%\.dsh\settings.yaml. Model choice, reasoning
 echo     effort and API keys are per-machine and live outside this repo.
+echo.
+echo   Project-specific rules live in each project's own AGENTS.md and are
+echo   yours to maintain - see templates\project.example.md.
 echo ============================================
 echo.
-if exist "%PLIST%" del "%PLIST%" >nul 2>&1
 pause
 exit /b 0
-
-REM ---------- helpers ----------
-
-REM :expand <path>  - decide whether it is a project or a folder of projects
-:expand
-set "AP=%~1"
-if not exist "!AP!\" (
-    call :emit "!AP!"
-    goto :eof
-)
-if exist "!AP!\AGENTS.md" (
-    call :emit "!AP!"
-    goto :eof
-)
-set "FOUNDANY="
-for /d %%d in ("!AP!\*") do (
-    if exist "%%~fd\AGENTS.md" (
-        call :emit "%%~fd"
-        set FOUNDANY=1
-    )
-    for /d %%e in ("%%~fd\*") do (
-        if exist "%%~fe\AGENTS.md" (
-            call :emit "%%~fe"
-            set FOUNDANY=1
-        )
-    )
-)
-if not defined FOUNDANY call :emit "!AP!"
-goto :eof
-
-REM :emit <path>  - append unless it is the template folder or already listed
-:emit
-set "EP=%~1"
-if /i "!EP!"=="%SCRIPT_DIR%\templates" goto :eof
-findstr /x /i /c:"!EP!" "%PLIST%" >nul 2>&1
-if not errorlevel 1 goto :eof
->>"%PLIST%" echo !EP!
-goto :eof
 
 :nodir
 echo   [FAIL] Cannot enter %SCRIPT_DIR%

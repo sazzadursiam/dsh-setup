@@ -194,7 +194,7 @@ ls ~/.figma-console-mcp/plugin
 ./verify.sh
 ```
 
-If everything is green the setup is done. Don't forget to copy `templates/AGENTS.md` into each project (Part 7).
+If everything is green the setup is done. Your agent rules are already installed at `~/.dsh/AGENTS.md` and apply to every project (Part 7).
 
 ---
 
@@ -439,7 +439,7 @@ The session must be in **Standard or Code mode** — Minimal mode doesn't show M
 
 **The biggest danger:** one failed call poisons the whole session. After that, every turn throws the same error even with no tool call. There is no recovery — you must open a **New Session**.
 
-**Solution:** put `AGENTS.md` in the workspace (see Part 7). If the rules are there, the agent won't touch these tools.
+**Solution:** the `figma` role block in `~/.dsh/AGENTS.md` (see Part 7). If the rules are loaded, the agent won't touch these tools. Check with `agents.sh --show` that `figma` is one of your roles.
 
 ### About viewing images
 
@@ -477,8 +477,6 @@ If it appears on the canvas, everything works.
 mkdir %USERPROFILE%\projects\my-site
 cd %USERPROFILE%\projects\my-site
 git init
-copy %USERPROFILE%\dsh-setup\templates\AGENTS.md .
-REM The path above assumes the dsh-setup repo was cloned into %USERPROFILE%. Change it if you cloned elsewhere.
 ```
 
 **macOS/Linux:**
@@ -487,57 +485,63 @@ REM The path above assumes the dsh-setup repo was cloned into %USERPROFILE%. Cha
 mkdir -p ~/projects/my-site
 cd ~/projects/my-site
 git init
-cp ~/dsh-setup/templates/AGENTS.md .
-# The path above assumes the dsh-setup repo was cloned into your home folder. Change it if you cloned elsewhere.
 ```
 
 Then, in the dsh UI, use **Choose workspace** to add and select the folder. No server restart needed.
 
-**Do run `git init`.** The agent will modify files and occasionally make mistakes. `git diff` shows what changed, and you can revert if it went wrong.
+**Do run `git init`.** The agent will modify files and occasionally make mistakes. `git diff` shows what changed, and you can revert if it went wrong. It also marks the project root, which is how dsh finds your instruction files.
 
-### AGENTS.md
+Nothing else to copy. The shared rules are already loaded from
+`~/.dsh/AGENTS.md` (next section).
 
-Putting `AGENTS.md` in the workspace makes the agent read it at session start. It's the most effective way to keep it away from the broken Figma tools — no need to remind it by hand every session.
+### Where agent rules live
 
-**You need a separate copy per project** — it's workspace-based, not global.
+dsh loads instruction files in this order, broad to specific, at the start of
+every session — later ones win:
 
-### Keeping copies up to date
+| File | Scope | Who maintains it |
+| --- | --- | --- |
+| `~/.dsh/AGENTS.md` | every project on this machine | `agents.sh` / `agents.bat`, from this repo |
+| `<project>/AGENTS.md` | that project | you, committed to that project's repo |
 
-Because each project holds its own copy, `git pull` in this repo updates
-`templates/AGENTS.md` but **not** the copies already sitting in your projects.
-
-The template carries a version stamp on its first line, and the verifier compares
-it against a project's copy:
-
-```
-verify.bat C:\Users\me\projects\my-site
-./verify.sh ~/projects/my-site
-```
-
-It reports `AGENTS.md is v0.2.0 but the template is v0.3.0` when a copy has
-fallen behind.
-
-**Do not fix that by overwriting the file.** Everything you wrote under
-`## Project specifics` would be lost. Diff the two and copy across only the
-sections that changed:
+**The shared file is generated, so never edit it by hand** — the next update
+overwrites it (it saves a `.bak` if it does not recognise the file). Change the
+rules at the source instead, in `templates/core.md` or `templates/roles/*.md`,
+then re-run `agents.sh`.
 
 ```
-fc "my-site\AGENTS.md" "templates\AGENTS.md"     REM Windows
-diff ~/projects/my-site/AGENTS.md templates/AGENTS.md
+agents.bat --show                          # what is installed
+agents.bat --role=figma,design-to-code     # change which role blocks you get
+agents.bat --lang=Bengali                  # fixed reply language
 ```
 
-Then start a **new session** — a running one keeps the copy it loaded.
+Roles exist so a machine used for artwork is not reading Figma tool rules at the
+start of every session: `figma`, `design-to-code`, `visual-assets`. You pick once
+and it is remembered.
 
-The rules the file should contain:
+**Language** defaults to English. Pass `--lang` for anything else — handy if you
+type in a romanised form but want replies in the script. It is remembered too.
+In `agents.bat` it takes the rest of the line, so put it last.
 
-- never use `figma_capture_screenshot` / `figma_take_screenshot`, and why (it ruins the session)
-- don't inline images or download them via the shell
-- visual verification is the user's job; the agent only reports node ids, layer names, positions
-- call `figma_get_status` to verify the active file before writing
-- `figma_navigate` takes a URL, not a file name
-- ask permission before destructive actions
+**For anything specific to your machine or account** — the providers you
+actually have, an internal proxy, a scratch folder outside your projects — copy
+`templates/local.example.md` to `local.md` in the repo root. It is git-ignored,
+appended to `~/.dsh/AGENTS.md` verbatim, and survives every update. Keep the
+templates neutral and put the specifics there. Not credentials — it is loaded
+into every session.
 
-Write the **reason** alongside each rule. When the agent knows why, it follows the rule more and doesn't look for loopholes.
+**Per-project rules go in the project's own `AGENTS.md`.** Start from
+`templates/project.example.md`. Keep it short — it is read every session — and
+put only what an agent would otherwise get wrong: the test command, a directory
+that must not be hand-edited, a library to avoid.
+
+A rule that a *project* must obey belongs in the project file, not the global
+one. The global file is per-machine and does not travel with a `git clone`, so a
+teammate who has not run this setup would not have it.
+
+Whichever file a rule lands in, write the **reason** next to it. When the agent
+knows why, it follows the rule more and doesn't look for loopholes. That is why
+the Figma block spells out that one bad screenshot call poisons the session.
 
 ### About sessions
 
@@ -593,13 +597,10 @@ verify.bat          # Windows
 
 > **Note (Windows):** running verify in the **same window** after `setx` shows a false `[FAIL]` on `FIGMA_ACCESS_TOKEN` — `setx` only affects new terminals. Close the window, open a new cmd, and run it again.
 
-Pass a project folder to also check whether its `AGENTS.md` has fallen behind
-the template — worth doing when the agent ignores a rule you know you wrote:
-
-```
-verify.bat C:\Users\me\projects\my-site
-./verify.sh ~/projects/my-site
-```
+It also reports whether `~/.dsh/AGENTS.md` is installed and came from this
+version of the repo — worth checking when the agent ignores a rule you know you
+wrote. If it is behind, run `agents.sh` (your roles are remembered) and start a
+new session.
 
 Then use the table below.
 
@@ -654,14 +655,15 @@ To build the whole system from scratch, follow this order. Details for each item
 
 **Project**
 
-- [ ] Create a folder, `git init`, copy `templates/AGENTS.md`
+- [ ] Create a folder and `git init` it
 - [ ] Add and select it via Choose workspace in dsh
 - [ ] New Session, Standard mode → test with `figma_diagnose`
 
 ### What can be shared
 
 - **Figma PAT** — make one and use it on every PC. When it expires you must change it everywhere.
-- **AGENTS.md** — just copy it.
+- **Agent rules** — clone this repo on each machine and run `agents.sh` there. Each person picks their own roles, so the file ends up different per machine on purpose.
+- **A project's own `AGENTS.md`** — it is committed to that project's repo, so everyone gets it with `git pull`.
 
 ### What cannot
 
@@ -681,14 +683,54 @@ update.bat          # Windows
 ./update.sh         # macOS / Linux
 ```
 
-That pulls this repo, runs the install command below, and flags any project
-whose `AGENTS.md` has fallen behind. To update only the npm package:
+That pulls this repo, runs the install command below, and rewrites
+`~/.dsh/AGENTS.md` with your remembered roles. To update only the npm package:
 
 ```powershell
 npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
 ```
 
 **Don't use `npm update -g`** — it doesn't re-apply the `--allow-scripts` allowlist, so the native modules (node-pty, koffi) are left unbuilt (`Cannot find module` / `.node file not found` error — see Part 8). The install command above is the correct way to update, and running it repeatedly is safe — if you're already on the latest it changes nothing.
+
+---
+
+## Part 10 — Migrating from v0.3.x
+
+Skip this if you set up with v0.4.0 or later.
+
+Before v0.4.0, every project held its own copy of `templates/AGENTS.md`. Those
+copies still work — dsh reads a project's `AGENTS.md` exactly as before — but
+they now duplicate the shared rules that `~/.dsh/AGENTS.md` provides on every
+project. Trim each one down to what is genuinely project-specific.
+
+**1. Install the shared rules** (once per machine):
+
+```
+cd dsh-setup
+git pull
+update.bat            # ./update.sh on macOS/Linux — asks which roles you work in
+```
+
+**2. Trim each project's copy.** See what your copy has that the old template
+never had:
+
+```
+git -C dsh-setup show v0.3.2:templates/AGENTS.md > old-template.md
+diff old-template.md ~/projects/my-site/AGENTS.md      # fc on Windows
+```
+
+Keep the `## Project specifics` content and any custom rules you added; delete
+everything the diff shows as unchanged template text. `templates/project.example.md`
+shows the shape to aim for. If nothing is left, delete the file — the shared
+rules still apply.
+
+A copy with no version stamp predates v0.3.0; diff it against `v0.2.0` instead.
+
+**3. Start a new session.** There is no file watcher, so a running session keeps
+what it loaded.
+
+Nothing breaks if you skip step 2 — you just pay for the duplicated text in
+every session's context.
 
 ---
 
@@ -721,6 +763,7 @@ dir %USERPROFILE%\.figma-console-mcp\plugin   # check plugin files
 ```
 %USERPROFILE%\.dsh\profiles\web\cordis.patch.yml   # dsh config
 %USERPROFILE%\.dsh\.credentials.yaml               # API keys — PLAIN TEXT, never share
+%USERPROFILE%\.dsh\AGENTS.md                       # shared agent rules — generated
 %USERPROFILE%\.figma-console-mcp\plugin\manifest.json   # bridge plugin
-<workspace>\AGENTS.md                            # agent rules
+<workspace>\AGENTS.md                            # that project's own rules
 ```

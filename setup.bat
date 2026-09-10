@@ -62,6 +62,18 @@ call npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node
 if errorlevel 1 goto :failed
 echo.
 
+REM ---------- agent rules ----------
+REM One file per machine at %USERPROFILE%\.dsh\AGENTS.md, which dsh loads into
+REM every session of every project. Asks once which roles this machine works in.
+echo [+] Setting up the shared agent rules...
+if exist "%~dp0agents.bat" (
+    call "%~dp0agents.bat"
+    if errorlevel 1 echo   [WARN] Could not write the agent rules - run agents.bat by hand
+) else (
+    echo   [WARN] agents.bat is missing from this checkout - skipping
+)
+echo.
+
 echo ============================================
 echo   INSTALL COMPLETE
 echo ============================================
@@ -90,7 +102,9 @@ echo.
 echo  5. Run the "Figma Desktop Bridge" plugin in your Figma file.
 echo     Wait for the green "Connected" status.
 echo.
-echo  6. Copy AGENTS.md into each project folder you work in.
+echo  The shared agent rules are already installed at %USERPROFILE%\.dsh\AGENTS.md
+echo  and apply to every project. Per-project rules go in that project's own
+echo  AGENTS.md - see templates\project.example.md.
 echo.
 pause
 exit /b 0
