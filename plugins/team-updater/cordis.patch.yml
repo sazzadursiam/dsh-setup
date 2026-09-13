@@ -1,0 +1,19 @@
+# dsh-team-updater — one settings row that updates this dsh install from the GUI.
+#
+# The row is inserted into the profile's tree. The Loader resolves `name` as a
+# module specifier (from the dsh installation first, then the profile's own
+# node_modules, where `dsh plugin --profile web add <spec>` installs it).
+#
+# A patch replaces the targeted row's whole `config`, so every key this plugin
+# owns is restated here.
+
+- insert:
+    - id: team-updater
+      name: dsh-team-updater
+      config:
+        # npm dist-tag to follow: 'latest' | 'next' | 'alpha', or an exact version.
+        tag: latest
+        # Registry to query and install from.
+        registry: https://registry.npmjs.org
+        # Relaunch dsh with the same arguments after the update is installed.
+        restart: true

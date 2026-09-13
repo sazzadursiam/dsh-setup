@@ -1,0 +1,303 @@
+/**
+ * dsh-team-updater — host half.
+ *
+ * Ships three exact routes on the web GUI's own origin and a browser row that
+ * calls them, so a dsh install can be updated from its own Settings panel:
+ *
+ *   GET  /team-updater/status  → installed vs registry version, update flag
+ *   GET  /team-updater/log     → tail of the update runner's log file
+ *   POST /team-updater/apply   → stage the update and hand off to the runner
+ *
+ * Why staging instead of `npm install -g` in place: the running dsh process
+ * keeps native addons (node-pty, koffi, sharp) mapped, and Windows refuses to
+ * replace a mapped DLL. So `apply` spawns a detached runner that waits for
+ * this process to exit, installs the requested version, then relaunches dsh
+ * with the same arguments. Nothing in the running process is replaced.
+ *
+ * The routes carry no authorization of their own; every request is first put
+ * through the Connection Host/Origin fence and browser authentication, the
+ * same policy the `/api` bridge uses.
+ * @module dsh-team-updater
+ */
+import { spawn } from 'node:child_process';
+import { mkdir, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { isNewer, isVersionLike } from './version.js';
+
+/** Stable Cordis plugin name. */
+const name = 'team-updater';
+/** Services required before the routes can be claimed. */
+const inject = ['webServer', 'connection'];
+/** Route namespace; exact paths, so nothing else on the origin is shadowed. */
+const ROUTE_BASE = '/team-updater';
+/** The package this plugin updates. */
+const PACKAGE_NAME = '@deepseek-ai/dsh';
+/**
+ * Kept in step with the same list in update-runner.mjs — which cannot import it,
+ * since it must keep running while this package is being replaced — and with
+ * setup.sh / setup.bat / update.sh / update.bat.
+ */
+const ALLOW_SCRIPTS = '@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs';
+const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
+const DEFAULT_TAG = 'latest';
+/** A registry answer is reused for this long before `status` refetches. */
+const CHECK_TTL_MS = 30_000;
+const REGISTRY_TIMEOUT_MS = 10_000;
+const LOG_TAIL_BYTES = 8_192;
+const BODY_LIMIT_BYTES = 64 * 1024;
+
+/** Turn plugin config into the effective options, ignoring anything malformed. */
+function resolveOptions(config) {
+	const raw = config !== null && typeof config === 'object' ? config : {};
+	const tag = typeof raw.tag === 'string' && raw.tag.length > 0 ? raw.tag : DEFAULT_TAG;
+	const registry = typeof raw.registry === 'string' && raw.registry.length > 0 ? raw.registry : DEFAULT_REGISTRY;
+	return {
+		tag,
+		registry: registry.replace(/\/+$/, ''),
+		restart: raw.restart !== false
+	};
+}
+
+/**
+ * Read the version of the dsh installation this process booted from by walking
+ * outward from the launcher script in `process.argv[1]`.
+ * @returns the installed version, or null when the entry point is not a dsh install.
+ */
+async function readInstalledVersion() {
+	const entry = process.argv[1];
+	const candidates = [];
+	if (typeof entry === 'string' && entry.length > 0) {
+		candidates.push(resolve(dirname(entry), '..', 'package.json'));
+		candidates.push(resolve(dirname(entry), 'package.json'));
+	}
+	if (typeof process.env.DSH_TEAM_UPDATER_VERSION === 'string' && process.env.DSH_TEAM_UPDATER_VERSION.length > 0) return process.env.DSH_TEAM_UPDATER_VERSION;
+	for (const candidate of candidates) {
+		try {
+			const manifest = JSON.parse(await readFile(candidate, 'utf8'));
+			if (manifest !== null && typeof manifest === 'object' && manifest.name === PACKAGE_NAME && typeof manifest.version === 'string') return manifest.version;
+		} catch {
+			/* not this candidate: keep walking */
+		}
+	}
+	return null;
+}
+
+/**
+ * Ask the registry for the version the configured tag points at.
+ * @returns the resolved version plus the packument's dist-tags.
+ */
+async function fetchRegistryVersion(options) {
+	const url = `${options.registry}/${PACKAGE_NAME.replace('/', '%2f')}`;
+	const response = await fetch(url, {
+		headers: { accept: 'application/vnd.npm.install-v1+json' },
+		signal: AbortSignal.timeout(REGISTRY_TIMEOUT_MS)
+	});
+	if (!response.ok) throw new Error(`registry responded ${response.status} ${response.statusText}`);
+	const packument = await response.json();
+	const distTags = packument !== null && typeof packument === 'object' && packument['dist-tags'] !== null && typeof packument['dist-tags'] === 'object' ? packument['dist-tags'] : {};
+	// An exact version in `tag` skips the tag table entirely.
+	if (isVersionLike(options.tag)) return { latest: options.tag, tag: options.tag, distTags, exact: true };
+	const resolved = distTags[options.tag];
+	if (typeof resolved !== 'string') throw new Error(`registry advertises no dist-tag ${JSON.stringify(options.tag)}`);
+	return { latest: resolved, tag: options.tag, distTags, exact: false };
+}
+
+/** The update command shown as the manual fallback in the UI. */
+function manualCommand(version) {
+	return `npm install -g --allow-scripts=${ALLOW_SCRIPTS} ${PACKAGE_NAME}@${version}`;
+}
+
+/** Log file and its directory for one process. */
+function logPaths() {
+	const directory = join(tmpdir(), 'dsh-team-updater');
+	return { directory, logPath: join(directory, 'update.log') };
+}
+
+/** Read the tail of the runner's log, or null when nothing has run yet. */
+async function readLogTail(logPath) {
+	try {
+		const text = await readFile(logPath, 'utf8');
+		return text.length > LOG_TAIL_BYTES ? text.slice(text.length - LOG_TAIL_BYTES) : text;
+	} catch {
+		return null;
+	}
+}
+
+/** Write one JSON response. */
+function writeJson(response, status, body) {
+	const payload = JSON.stringify(body);
+	response.writeHead(status, {
+		'content-type': 'application/json; charset=utf-8',
+		'cache-control': 'no-store',
+		'content-length': Buffer.byteLength(payload)
+	});
+	response.end(payload);
+}
+
+/**
+ * Apply Connection's Host/Origin fence and browser authentication to one of
+ * this plugin's routes, falling back to a loopback-socket check when the
+ * Connection service is not composed.
+ * @returns true when the request may proceed; a rejection is already written otherwise.
+ */
+function authorize(ctx, request, response) {
+	const connection = ctx.connection;
+	if (connection !== undefined && typeof connection.requestRejection === 'function') {
+		const rejection = connection.requestRejection({ headers: request.headers });
+		if (rejection !== undefined) {
+			response.writeHead(rejection);
+			response.end();
+			return false;
+		}
+		return true;
+	}
+	const address = request.socket?.remoteAddress ?? '';
+	const loopback = address === '127.0.0.1' || address === '::1' || address === 'ffff:127.0.0.1' || address === '::ffff:127.0.0.1';
+	if (!loopback) {
+		response.writeHead(403);
+		response.end();
+		return false;
+	}
+	return true;
+}
+
+/** Read a bounded JSON request body, or null when it is absent or malformed. */
+async function readJsonBody(request) {
+	const chunks = [];
+	let size = 0;
+	for await (const chunk of request) {
+		size += chunk.length;
+		if (size > BODY_LIMIT_BYTES) return null;
+		chunks.push(chunk);
+	}
+	if (size === 0) return {};
+	try {
+		const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+		return parsed !== null && typeof parsed === 'object' ? parsed : null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Stage an update: spawn the detached runner, which optionally quits this
+ * process, waits for it to disappear, installs the version, and relaunches
+ * dsh.
+ *
+ * Quitting is the runner's job, not this process's: exiting in-process while
+ * fetch handles are open trips a libuv assertion on Windows, and an external
+ * terminator is what an installer would do anyway.
+ * @returns the runner's pid and the log path.
+ */
+async function startUpdate({ options, version, parentPid, argv, quit }) {
+	const { directory, logPath } = logPaths();
+	await mkdir(directory, { recursive: true });
+	const runner = fileURLToPath(new URL('./update-runner.mjs', import.meta.url));
+	const args = [
+		runner,
+		'--parent-pid', String(parentPid),
+		'--package', PACKAGE_NAME,
+		'--version', version,
+		'--cwd', process.cwd(),
+		'--log', logPath,
+		'--registry', options.registry,
+		'--restart', options.restart ? 'yes' : 'no',
+		'--quit', quit ? 'yes' : 'no',
+		'--',
+		...argv
+	];
+	const child = spawn(process.execPath, args, { detached: true, stdio: 'ignore', windowsHide: true });
+	child.unref();
+	return { logPath, runnerPid: child.pid };
+}
+
+/**
+ * Claim the updater routes on the web GUI's origin.
+ * @param ctx - plugin context carrying the webServer and connection services.
+ * @param config - optional `{ tag, registry, autoCheck, restart }`.
+ */
+function apply(ctx, config) {
+	const options = resolveOptions(config);
+	/** Last registry answer, reused inside {@link CHECK_TTL_MS}. */
+	let cached;
+	const status = async (refresh) => {
+		const now = Date.now();
+		if (!refresh && cached !== undefined && now - cached.at < CHECK_TTL_MS) return cached.value;
+		const current = await readInstalledVersion();
+		const registry = await fetchRegistryVersion(options);
+		const updateAvailable = current !== null && isNewer(registry.latest, current);
+		const value = {
+			current,
+			latest: registry.latest,
+			tag: registry.tag,
+			updateAvailable,
+			exact: registry.exact,
+			distTags: registry.distTags,
+			registry: options.registry,
+			restart: options.restart,
+			checkedAt: new Date(now).toISOString(),
+			command: manualCommand(registry.latest),
+			logPath: logPaths().logPath
+		};
+		cached = { at: now, value };
+		return value;
+	};
+	const route = (path, method, handler) => ctx.effect(
+		() => ctx.webServer.register({
+			kind: 'exact',
+			path,
+			handler: async (request, response) => {
+				if (!authorize(ctx, request, response)) return;
+				if (request.method !== method) {
+					response.writeHead(405, { allow: method });
+					response.end();
+					return;
+				}
+				try {
+					await handler(request, response);
+				} catch (error) {
+					writeJson(response, 502, { error: error instanceof Error ? error.message : String(error) });
+				}
+			}
+		}),
+		`team-updater: ${method} ${path}`
+	);
+	route(`${ROUTE_BASE}/status`, 'GET', async (request, response) => {
+		const refresh = new URL(request.url ?? '/', 'http://localhost').searchParams.has('refresh');
+		writeJson(response, 200, await status(refresh));
+	});
+	route(`${ROUTE_BASE}/log`, 'GET', async (_request, response) => {
+		const { logPath } = logPaths();
+		writeJson(response, 200, { path: logPath, text: await readLogTail(logPath) });
+	});
+	route(`${ROUTE_BASE}/apply`, 'POST', async (request, response) => {
+		const body = await readJsonBody(request);
+		if (body === null) {
+			writeJson(response, 400, { error: 'expected a JSON object body' });
+			return;
+		}
+		const current = await status(true);
+		const version = typeof body.version === 'string' && isVersionLike(body.version) ? body.version : current.latest;
+		if (!isVersionLike(version)) {
+			writeJson(response, 400, { error: `not a version: ${JSON.stringify(version)}` });
+			return;
+		}
+		const quit = body.quit === true;
+		const argv = process.argv.slice(2);
+		const started = await startUpdate({ options, version, parentPid: process.pid, argv, quit });
+		writeJson(response, 202, {
+			started: true,
+			version,
+			restart: options.restart,
+			quit,
+			command: manualCommand(version),
+			...started
+		});
+	});
+	if (typeof ctx.logger?.info === 'function') ctx.logger.info(`team-updater: updating ${PACKAGE_NAME} against ${options.registry} (tag ${options.tag})`);
+}
+
+export { apply, inject, name };
+export default { apply, inject, name };

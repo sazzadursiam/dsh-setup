@@ -14,6 +14,27 @@
   taskbar when there is).
 - **Auto-update notes** in `SETUP.md` Part 11 and the README, including the
   silent-schedule option for macOS / Linux.
+- **`plugins/team-updater/`** — the in-app update button ("dsh updates" under
+  Settings → General) now lives in this repo instead of a folder outside it, so
+  it reaches a machine through `git pull` and needs no registry. `setup` and
+  `update` add it to the `web` profile once that profile exists.
+
+### Fixed
+
+- **Agent-rule stamp parsing across platforms.** `verify.bat` and `agents.bat`
+  read line 1 with `set /p`, which ends a line on CR and so swallowed a whole
+  file written by `agents.sh` (LF only) — the version came out as garbage and
+  roles could be silently forgotten. The shell side had the mirror problem: a
+  file written by `agents.bat` (CRLF) left a stray CR that stopped the roles
+  pattern from matching. Both sides now read the stamp the same way.
+- **`verify.bat` always reported failure.** An unescaped `)` inside an `echo`
+  closed the `if` block early, so `set FAIL=1` ran unconditionally and a clean
+  machine still printed "SOME CHECKS FAILED".
+- **`verify.sh` on Windows.** Git Bash was reported as Linux, which hid the
+  bridge-plugin check and wrongly claimed Figma write access was unavailable;
+  the port check only knew `lsof`, so it always said dsh was not running.
+- **The update button skipped npm's install-script allowlist**, installing a
+  different dsh than `setup`/`update` do.
 
 ## [0.4.0] — 2026-09-10
 

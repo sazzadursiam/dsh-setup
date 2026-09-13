@@ -82,6 +82,21 @@ else
 fi
 say ""
 
+# ---------- the in-GUI update button ----------
+# Re-run on every update so an existing install picks the button up, and so the
+# spec follows this checkout if it was moved. Adding it twice is a no-op.
+say "${BOLD}[+]${OFF} Checking the in-app update button..."
+if [ -d "${DSH_HOME:-$HOME/.dsh}/profiles/web" ]; then
+  if dsh plugin --profile web add "file:$SCRIPT_DIR/plugins/team-updater" >/dev/null 2>&1; then
+    ok "Update button present - Settings > General"
+  else
+    warn "Could not add it - run: dsh plugin --profile web add file:$SCRIPT_DIR/plugins/team-updater"
+  fi
+else
+  warn "No web profile yet - run 'dsh web' once, then re-run this script"
+fi
+say ""
+
 # ---------- 3. the shared agent rules ----------
 say "${BOLD}[3/3]${OFF} Rewriting the shared agent rules..."
 if [ ! -x "$SCRIPT_DIR/agents.sh" ] && [ ! -f "$SCRIPT_DIR/agents.sh" ]; then

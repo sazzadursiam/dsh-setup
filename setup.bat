@@ -62,6 +62,26 @@ call npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node
 if errorlevel 1 goto :failed
 echo.
 
+REM ---------- in-GUI update button ----------
+REM The profile only exists once dsh has been started at least once, so on a
+REM fresh machine this is a hint rather than a step. `dsh plugin ... add`
+REM appends the bundle by itself, because the package declares dsh.bundle.patch.
+echo [+] Adding the in-app update button...
+set "DSH_PROFILE_DIR=%DSH_HOME%"
+if not defined DSH_PROFILE_DIR set "DSH_PROFILE_DIR=%USERPROFILE%\.dsh"
+if exist "%DSH_PROFILE_DIR%\profiles\web" (
+    call dsh plugin --profile web add "file:%~dp0plugins\team-updater" >nul 2>&1
+    if errorlevel 1 (
+        echo   [WARN] Could not add it - run this by hand:
+        echo          dsh plugin --profile web add "file:%~dp0plugins\team-updater"
+    ) else (
+        echo   [ OK ] Update button added - Settings ^> General, after a restart
+    )
+) else (
+    echo   [WARN] No web profile yet - run "dsh web" once, then re-run this script
+)
+echo.
+
 REM ---------- agent rules ----------
 REM One file per machine at %USERPROFILE%\.dsh\AGENTS.md, which dsh loads into
 REM every session of every project. Asks once which roles this machine works in.

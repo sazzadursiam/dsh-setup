@@ -92,6 +92,25 @@ if "%SKIP_DSH%"=="1" (
 )
 echo.
 
+REM ---------- the in-GUI update button ----------
+REM Re-run on every update so an existing install picks the button up, and so
+REM the spec follows this checkout if it was moved. Adding it twice is a no-op.
+echo [+] Checking the in-app update button...
+set "DSH_PROFILE_DIR=%DSH_HOME%"
+if not defined DSH_PROFILE_DIR set "DSH_PROFILE_DIR=%USERPROFILE%\.dsh"
+if exist "%DSH_PROFILE_DIR%\profiles\web" (
+    call dsh plugin --profile web add "file:%SCRIPT_DIR%\plugins\team-updater" >nul 2>&1
+    if errorlevel 1 (
+        echo   [WARN] Could not add it - run this by hand:
+        echo          dsh plugin --profile web add "file:%SCRIPT_DIR%\plugins\team-updater"
+    ) else (
+        echo   [ OK ] Update button present - Settings ^> General
+    )
+) else (
+    echo   [WARN] No web profile yet - run "dsh web" once, then re-run this script
+)
+echo.
+
 REM ---------- 3. the shared agent rules ----------
 echo [3/3] Rewriting the shared agent rules...
 if not exist "%SCRIPT_DIR%\agents.bat" (

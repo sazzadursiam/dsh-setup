@@ -148,6 +148,11 @@ To have it happen by itself at login:
 - **macOS / Linux** — run `./check.sh` by hand, or schedule `update.sh` directly
   for fully silent updates. Both are in `SETUP.md`, Part 11.
 
+`check` covers this repo — the shared rules and the scripts. **dsh itself** has
+its own button: `setup` and `update` add the `plugins/team-updater` plugin to
+your dsh profile, which puts a "dsh updates" row under **Settings → General**
+that installs a newer dsh and restarts for you.
+
 ## Something not working?
 
 Run the verifier before digging through docs — it tells you which piece is missing:
@@ -189,6 +194,7 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 | `agents.bat` / `agents.sh`    | Write the shared agent rules to `~/.dsh/AGENTS.md`         |
 | `verify.bat` / `verify.sh`    | Check what is set up and what is missing                   |
 | `cordis.patch.yml`            | MCP server config — copy into your dsh profile             |
+| `plugins/team-updater/`       | The in-app update button — added to your dsh profile by setup |
 | `templates/core.md`           | The shared rules, applied on every project                 |
 | `templates/roles/`            | Optional rule blocks — Figma, design-to-code, visual assets |
 | `templates/project.example.md`| Starting point for a project's own `AGENTS.md`             |

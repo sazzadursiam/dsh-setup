@@ -103,6 +103,23 @@ ok "dsh installed"
 
 say ""
 
+# ---------- in-GUI update button ----------
+# The profile only exists once dsh has been started at least once, so on a fresh
+# machine this is a hint rather than a step. `dsh plugin ... add` appends the
+# bundle by itself, because the package declares dsh.bundle.patch.
+say "${BOLD}[+]${OFF} Adding the in-app update button..."
+if [ -d "${DSH_HOME:-$HOME/.dsh}/profiles/web" ]; then
+  if dsh plugin --profile web add "file:$SCRIPT_DIR/plugins/team-updater" >/dev/null 2>&1; then
+    ok "Update button added - Settings > General, after a restart"
+  else
+    warn "Could not add it - run: dsh plugin --profile web add file:$SCRIPT_DIR/plugins/team-updater"
+  fi
+else
+  warn "No web profile yet - run 'dsh web' once, then re-run this script"
+fi
+
+say ""
+
 # ---------- agent rules ----------
 # One file per machine at ~/.dsh/AGENTS.md, which dsh loads into every session
 # of every project. Asks once which roles this machine works in.
