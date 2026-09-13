@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify the dsh + Figma setup on macOS or Linux
+# Verify the dsh + Figma setup on macOS, Linux, or Windows under Git Bash
 set -uo pipefail
 
 GREEN=$'\033[32m'; RED=$'\033[31m'; YEL=$'\033[33m'; DIM=$'\033[2m'; BOLD=$'\033[1m'; OFF=$'\033[0m'
@@ -12,7 +12,8 @@ hint() { printf '         %s%s%s\n' "$DIM" "$*" "$OFF"; }
 
 OS="linux"
 case "$(uname -s)" in
-  Darwin) OS="mac" ;;
+  Darwin)               OS="mac" ;;
+  MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
 esac
 
 printf '\n%s============================================%s\n' "$BOLD" "$OFF"
@@ -85,18 +86,20 @@ fi
 
 # ---------- Bridge plugin ----------
 PLUG="$HOME/.figma-console-mcp/plugin/manifest.json"
-if [ "$OS" = "mac" ]; then
-  if [ -f "$PLUG" ]; then
-    pass "Bridge plugin files present"
-    hint "Import in Figma Desktop: Cmd+/ then type \"import\""
-    hint "$PLUG"
-  else
-    fail "Bridge plugin files not generated yet"
-    hint "Start dsh web and open a session once, then re-run this."
-  fi
-else
+if [ "$OS" = "linux" ]; then
   warn "Figma write access is not available on Linux (no desktop app)"
   hint "Read-only Figma tools still work via your PAT."
+elif [ -f "$PLUG" ]; then
+  pass "Bridge plugin files present"
+  if [ "$OS" = "mac" ]; then
+    hint "Import in Figma Desktop: Cmd+/ then type \"import\""
+  else
+    hint "Import in Figma Desktop: Ctrl+/ then type \"import\""
+  fi
+  hint "$PLUG"
+else
+  fail "Bridge plugin files not generated yet"
+  hint "Start dsh web and open a session once, then re-run this."
 fi
 
 # ---------- shared agent rules ----------
@@ -129,7 +132,16 @@ else
 fi
 
 # ---------- dsh running? ----------
-if command -v lsof >/dev/null 2>&1 && lsof -i :3080 >/dev/null 2>&1; then
+# lsof is absent on plain Linux images and in Git Bash, where the port check
+# would otherwise always say "not running". The netstat address separator is
+# ":" on Windows and "." on BSD/macOS.
+port_3080_busy() {
+  command -v lsof    >/dev/null 2>&1 && lsof -i :3080          >/dev/null 2>&1 && return 0
+  command -v ss      >/dev/null 2>&1 && ss -ltn 2>/dev/null | grep -q ':3080[[:space:]]' && return 0
+  command -v netstat >/dev/null 2>&1 && netstat -an 2>/dev/null | grep -q '[:.]3080[[:space:]]' && return 0
+  return 1
+}
+if port_3080_busy; then
   pass "Something is listening on port 3080"
 else
   printf '  %s[INFO]%s dsh does not appear to be running - start it with: dsh web\n' "$DIM" "$OFF"
@@ -141,7 +153,7 @@ if [ "$FAIL" -eq 1 ]; then
   printf '  Details in SETUP.md\n'
 else
   printf '%s  ALL CHECKS PASSED%s\n' "$GREEN" "$OFF"
-  if [ "$OS" = "mac" ]; then
+  if [ "$OS" != "linux" ]; then
     printf '\n  Last step is manual: open Figma Desktop, run the\n'
     printf '  "Figma Desktop Bridge" plugin, and look for the\n'
     printf '  green "Connected" status.\n'
