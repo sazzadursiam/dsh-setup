@@ -751,10 +751,11 @@ check.bat           # Windows
 enable-autoupdate.bat
 ```
 
-It puts a shortcut to `check.bat` in your Startup folder. At every login the
-window appears for a moment and closes by itself if there is nothing new; it
-stays and asks only when there is an update. Remove it later: Win+R, type
-`shell:startup`, delete `dsh-check-updates.lnk`. If you move the repo, run
+It puts a shortcut to `check.bat` in your Startup folder, minimized so it
+never takes the screen. At every login it opens and closes in the taskbar
+unseen if there is nothing new; if there is an update, click the taskbar
+entry to see the prompt. Remove it later: Win+R, type `shell:startup`,
+delete `dsh-check-updates.lnk`. If you move the repo, run
 `enable-autoupdate.bat` again from the new location.
 
 **macOS / Linux:** run `./check.sh` by hand — same check, no login hook. If you

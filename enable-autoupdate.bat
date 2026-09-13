@@ -18,7 +18,10 @@ echo.
 echo   The shortcut points at check.bat in THIS folder, so it keeps working
 echo   after update.bat pulls a newer check.bat.
 
-powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $sc = $ws.CreateShortcut('%LNK%'); $sc.TargetPath = '%SCRIPT_DIR%\check.bat'; $sc.WorkingDirectory = '%SCRIPT_DIR%'; $sc.Save()"
+REM WindowStyle 7 = minimized. With nothing new, check.bat opens and closes
+REM in the taskbar without ever taking the screen; with an update it still
+REM waits for a keypress, so a click on the taskbar entry gets you the prompt.
+powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $sc = $ws.CreateShortcut('%LNK%'); $sc.TargetPath = '%SCRIPT_DIR%\check.bat'; $sc.WorkingDirectory = '%SCRIPT_DIR%'; $sc.WindowStyle = 7; $sc.Save()"
 if errorlevel 1 goto :failed
 
 echo   [ OK ] Done. From now on Windows checks at login.

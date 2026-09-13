@@ -142,9 +142,9 @@ check.bat           # Windows
 To have it happen by itself at login:
 
 - **Windows** — one command: `enable-autoupdate.bat`. It puts a shortcut to
-  `check.bat` in your Startup folder. At login the window appears for a moment
-  and closes by itself when there is nothing new; it stays and asks only when
-  there is an update.
+  `check.bat` in your Startup folder, minimized so it never takes the screen.
+  When there is nothing new it opens and closes in the taskbar unseen; when
+  there is an update, click the taskbar entry to see the prompt.
 - **macOS / Linux** — run `./check.sh` by hand, or schedule `update.sh` directly
   for fully silent updates. Both are in `SETUP.md`, Part 11.
 

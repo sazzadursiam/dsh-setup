@@ -9,8 +9,9 @@
   when there are new commits. A team picks up updates without being told, and
   without the always-pull cost of `update`.
 - **`enable-autoupdate.bat`** — one command that puts `check.bat` in the
-  Windows Startup folder, so the check runs at every login (silent when there
-  is nothing new, one prompt when there is).
+  Windows Startup folder, minimized, so the check runs at every login without
+  ever flashing a window (unseen when there is nothing new, one prompt in the
+  taskbar when there is).
 - **Auto-update notes** in `SETUP.md` Part 11 and the README, including the
   silent-schedule option for macOS / Linux.
 
