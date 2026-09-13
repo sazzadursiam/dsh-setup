@@ -127,6 +127,27 @@ only reach a session started afterwards — there is no file watcher), and
 **update `~/.dsh/settings.yaml`** — model choice, reasoning effort and API keys
 are per-machine and live outside this repo.
 
+## Auto-update (optional)
+
+Your team does not need you to tell them when you have shipped something.
+`check` fetches quietly, compares against the shared repo, and does nothing
+when the checkout is already current. When there are new commits it says so
+and offers to run the update:
+
+```
+check.bat           # Windows
+./check.sh          # macOS / Linux
+```
+
+To have it happen by itself at login:
+
+- **Windows** — one command: `enable-autoupdate.bat`. It puts a shortcut to
+  `check.bat` in your Startup folder. At login the window appears for a moment
+  and closes by itself when there is nothing new; it stays and asks only when
+  there is an update.
+- **macOS / Linux** — run `./check.sh` by hand, or schedule `update.sh` directly
+  for fully silent updates. Both are in `SETUP.md`, Part 11.
+
 ## Something not working?
 
 Run the verifier before digging through docs — it tells you which piece is missing:
@@ -163,6 +184,8 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 | `SETUP.md`                    | Full guide (English) — setup, workflow, troubleshooting    |
 | `setup.bat` / `setup.sh`      | Install scripts                                            |
 | `update.bat` / `update.sh`    | Update an existing setup                                   |
+| `check.bat` / `check.sh`      | Check for updates, apply only when you say yes             |
+| `enable-autoupdate.bat`       | Add the login-time update check (Windows)                  |
 | `agents.bat` / `agents.sh`    | Write the shared agent rules to `~/.dsh/AGENTS.md`         |
 | `verify.bat` / `verify.sh`    | Check what is set up and what is missing                   |
 | `cordis.patch.yml`            | MCP server config — copy into your dsh profile             |

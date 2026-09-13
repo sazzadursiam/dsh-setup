@@ -734,6 +734,42 @@ every session's context.
 
 ---
 
+## Part 11 — Auto-updates (optional)
+
+`check` fetches quietly, compares against the shared repo, and does nothing
+when the checkout is already current. When there are new commits it says so
+and offers to run the usual `update.bat` / `update.sh`:
+
+```
+check.bat           # Windows
+./check.sh          # macOS / Linux
+```
+
+**Windows — check at every login (one command):**
+
+```
+enable-autoupdate.bat
+```
+
+It puts a shortcut to `check.bat` in your Startup folder. At every login the
+window appears for a moment and closes by itself if there is nothing new; it
+stays and asks only when there is an update. Remove it later: Win+R, type
+`shell:startup`, delete `dsh-check-updates.lnk`. If you move the repo, run
+`enable-autoupdate.bat` again from the new location.
+
+**macOS / Linux:** run `./check.sh` by hand — same check, no login hook. If you
+prefer fully automatic updates with no prompt, schedule `update.sh` directly:
+
+- macOS — a LaunchAgent whose `ProgramArguments` is
+  `["/bin/bash", "/Users/YOU/dsh-setup/update.sh"]`.
+- Linux — `crontab -e`, add `@weekly /home/YOU/dsh-setup/update.sh`
+
+A silent run still skips when the tree has local changes, and new rules only
+reach a session you start afterwards (Part 10, step 3). Prefer the prompted
+`check` when you want to see what happened.
+
+---
+
 ## Quick reference
 
 **Startup order**
@@ -754,7 +790,9 @@ dsh web
 ```
 dsh web                              # start
 Ctrl+C (in the dsh window)           # stop
-npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh   # update (not npm update — Part 9)
+update.bat                           # update (repo + dsh + rules)
+check.bat                            # check for updates, ask before updating
+npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh   # update dsh only (not npm update — Part 9)
 dir %USERPROFILE%\.figma-console-mcp\plugin   # check plugin files
 ```
 
