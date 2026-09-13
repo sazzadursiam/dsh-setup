@@ -141,21 +141,25 @@ if not "!LANG_ARG!"=="!LANG_ARG:^|=!" (
 REM ---------- read the remembered roles out of the generated file ----------
 REM The stamp is how roles are remembered, so no extra state file is added to
 REM .dsh - a directory that otherwise holds credentials.
-set "FIRST="
+set "STAMP="
 set "OURS=0"
 set "REMEMBERED="
 if exist "%TARGET%" (
-    set /p FIRST=<"%TARGET%"
-    if not "!FIRST!"=="!FIRST:dsh-setup:=!" (
+    REM Not "set /p": it ends a line on CR, so on a file agents.sh wrote (LF
+    REM only) it swallows the whole file and the roles and lang below come out
+    REM wrong. for /f splits on LF or CRLF. Dropping token 1 drops the "<!--" -
+    REM delayed expansion is on here and would eat the "!" and the rest with it.
+    for /f "usebackq tokens=1,* delims= " %%a in ("%TARGET%") do if not defined STAMP set "STAMP=%%b"
+    if not "!STAMP!"=="!STAMP:dsh-setup:=!" (
         set "OURS=1"
-        set "R=!FIRST:*roles:=!"
+        set "R=!STAMP:*roles:=!"
         set "R=!R: -->=!"
         if "!R:~0,1!"==" " set "R=!R:~1!"
         set "REMEMBERED=!R!"
-        set "STAMPED=!FIRST:*dsh-setup: =!"
+        set "STAMPED=!STAMP:*dsh-setup: =!"
         for /f "tokens=1 delims= " %%v in ("!STAMPED!") do set "FILE_VER=%%v"
         REM lang sits between the version and roles: "... | lang: X | roles: ..."
-        set "LR=!FIRST:*lang: =!"
+        set "LR=!STAMP:*lang: =!"
         for /f "tokens=1 delims=|" %%l in ("!LR!") do set "REM_LANG=%%l"
     )
 )

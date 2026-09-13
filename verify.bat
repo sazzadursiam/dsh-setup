@@ -43,7 +43,7 @@ if "%FIGMA_ACCESS_TOKEN%"=="" (
     echo   [FAIL] FIGMA_ACCESS_TOKEN not set in this terminal
     echo          Run:  setx FIGMA_ACCESS_TOKEN "figd_..."
     echo          Then CLOSE this window and open a NEW one, then re-run this.
-    echo          (setx only affects NEW terminals - same-window rechecks still fail.)
+    echo          ^(setx only affects NEW terminals - same-window rechecks still fail.^)
     set FAIL=1
 ) else (
     echo   [ OK ] FIGMA_ACCESS_TOKEN is set
@@ -119,16 +119,20 @@ if not exist "%RULES%" (
     echo          agents.bat          ^(asks once which roles this machine works in^)
     set FAIL=1
 ) else (
-    set "FIRST="
-    set /p FIRST=<"%RULES%"
+    set "STAMP="
+    REM Not "set /p": it ends a line on CR, so on a file agents.sh wrote (LF
+    REM only) it swallows the whole file and the version parse lands on the last
+    REM line. for /f splits on LF or CRLF. Dropping token 1 drops the "<!--" -
+    REM delayed expansion is on here and would eat the "!" and the rest with it.
+    for /f "usebackq tokens=1,* delims= " %%a in ("%RULES%") do if not defined STAMP set "STAMP=%%b"
     REM Substring tests, not findstr through a pipe: the stamp line holds a "|".
-    if "!FIRST!"=="!FIRST:dsh-setup:=!" (
+    if "!STAMP!"=="!STAMP:dsh-setup:=!" (
         echo   [WARN] %RULES% exists but was not written by agents.bat - leaving it alone
         echo          agents.bat          ^(it will save a .bak first^)
     ) else (
-        set "REST=!FIRST:*dsh-setup: v=!"
+        set "REST=!STAMP:*dsh-setup: v=!"
         for /f "tokens=1 delims= " %%v in ("!REST!") do set "FILE_V=%%v"
-        set "R=!FIRST:*roles:=!"
+        set "R=!STAMP:*roles:=!"
         set "R=!R: -->=!"
         if "!R:~0,1!"==" " set "R=!R:~1!"
         if "!R!"=="" set "R=none"

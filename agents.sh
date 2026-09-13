@@ -45,13 +45,19 @@ TARGET="$DSH_DIR/AGENTS.md"
 # the line so their pattern can anchor on the closing "-->".
 STAMP_PREFIX="<!-- dsh-setup:"
 DEFAULT_LANG="English"
+# agents.bat writes this line with CRLF. Without the tr the trailing CR sits
+# after the "-->" and the roles pattern below stops anchoring, so a machine that
+# ran agents.bat once would silently lose its remembered roles here.
+stamp_of() {
+  head -n1 "$1" | tr -d '\r'
+}
 roles_of() {
   [ -f "$1" ] || return 0
-  head -n1 "$1" | sed -n 's/^<!-- dsh-setup:.*roles: *\([^ ]*\) *-->$/\1/p'
+  stamp_of "$1" | sed -n 's/^<!-- dsh-setup:.*roles: *\([^ ]*\) *-->$/\1/p'
 }
 lang_of() {
   [ -f "$1" ] || return 0
-  head -n1 "$1" | sed -n 's/^<!-- dsh-setup:.*lang: \(.*\) | roles:.*/\1/p'
+  stamp_of "$1" | sed -n 's/^<!-- dsh-setup:.*lang: \(.*\) | roles:.*/\1/p'
 }
 
 # ---------- available roles ----------

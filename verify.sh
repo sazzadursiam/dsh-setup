@@ -115,8 +115,11 @@ elif ! head -n1 "$RULES" | grep -q 'dsh-setup:'; then
   warn "$RULES exists but was not written by agents.sh - leaving it alone"
   hint "./agents.sh          (it will save a .bak first)"
 else
-  FILE_V="$(head -n1 "$RULES" | sed -n 's/.*dsh-setup: v\([^ ]*\).*/\1/p')"
-  ROLES="$(head -n1 "$RULES" | sed -n 's/.*roles: *\([^ ]*\) *-->$/\1/p')"
+  # tr: agents.bat writes this line with CRLF, and the trailing CR would land
+  # after the "-->" the roles pattern anchors on.
+  STAMP="$(head -n1 "$RULES" | tr -d '\r')"
+  FILE_V="$(printf '%s\n' "$STAMP" | sed -n 's/.*dsh-setup: v\([^ ]*\).*/\1/p')"
+  ROLES="$(printf '%s\n' "$STAMP" | sed -n 's/.*roles: *\([^ ]*\) *-->$/\1/p')"
   if [ "$FILE_V" = "$REPO_V" ]; then
     pass "Agent rules current (v$FILE_V, roles: ${ROLES:-none})"
   else
