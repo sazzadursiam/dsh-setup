@@ -70,6 +70,9 @@ window.__ModuleLoader__.load({
 		function versionLine(status) {
 			if (status?.current === null || status?.current === undefined) return `installed version unknown · registry ${status?.latest ?? '?'}`;
 			if (status.updateAvailable) return `${status.current} → ${status.latest} (${status.tag})`;
+			// Say why the newer version is being withheld, so the row does not
+			// look merely out of date next to a registry version it skips.
+			if (status.blockedReason) return `${status.current} · holding back ${status.latest}: ${status.blockedReason}`;
 			return `${status.current} · registry ${status.latest} (${status.tag})`;
 		}
 

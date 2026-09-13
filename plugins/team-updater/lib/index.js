@@ -53,11 +53,30 @@ function resolveOptions(config) {
 	const raw = config !== null && typeof config === 'object' ? config : {};
 	const tag = typeof raw.tag === 'string' && raw.tag.length > 0 ? raw.tag : DEFAULT_TAG;
 	const registry = typeof raw.registry === 'string' && raw.registry.length > 0 ? raw.registry : DEFAULT_REGISTRY;
+	const blocked = new Map();
+	if (raw.blocked !== null && typeof raw.blocked === 'object') {
+		for (const [version, reason] of Object.entries(raw.blocked)) {
+			if (isVersionLike(version) && typeof reason === 'string' && reason.length > 0) blocked.set(version, reason);
+		}
+	}
 	return {
 		tag,
 		registry: registry.replace(/\/+$/, ''),
-		restart: raw.restart !== false
+		restart: raw.restart !== false,
+		blocked
 	};
+}
+
+/**
+ * Why a version must not be installed, or null when it is fine.
+ *
+ * A released version can turn out to break the installs it lands on — dsh
+ * 0.1.5-rc.1 cannot resume any session written by an earlier version — and the
+ * registry keeps offering it. Config, not code, so the entry can be dropped
+ * when a fixed version ships.
+ */
+function blockedReasonFor(version, blocked) {
+	return blocked.get(version) ?? null;
 }
 
 /**
@@ -227,12 +246,14 @@ function apply(ctx, config) {
 		if (!refresh && cached !== undefined && now - cached.at < CHECK_TTL_MS) return cached.value;
 		const current = await readInstalledVersion();
 		const registry = await fetchRegistryVersion(options);
-		const updateAvailable = current !== null && isNewer(registry.latest, current);
+		const blockedReason = blockedReasonFor(registry.latest, options.blocked);
+		const updateAvailable = current !== null && isNewer(registry.latest, current) && blockedReason === null;
 		const value = {
 			current,
 			latest: registry.latest,
 			tag: registry.tag,
 			updateAvailable,
+			blockedReason,
 			exact: registry.exact,
 			distTags: registry.distTags,
 			registry: options.registry,
@@ -282,6 +303,13 @@ function apply(ctx, config) {
 		const version = typeof body.version === 'string' && isVersionLike(body.version) ? body.version : current.latest;
 		if (!isVersionLike(version)) {
 			writeJson(response, 400, { error: `not a version: ${JSON.stringify(version)}` });
+			return;
+		}
+		// Checked here as well as in status: this refuses a version named
+		// directly in the request body, which never passed through the UI.
+		const refusal = blockedReasonFor(version, options.blocked);
+		if (refusal !== null) {
+			writeJson(response, 409, { error: `${version} is blocked: ${refusal}`, version, blockedReason: refusal });
 			return;
 		}
 		const quit = body.quit === true;

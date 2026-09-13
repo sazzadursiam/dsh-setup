@@ -17,3 +17,12 @@
         registry: https://registry.npmjs.org
         # Relaunch dsh with the same arguments after the update is installed.
         restart: true
+        # Versions the button must never offer, and why. The reason is shown in
+        # the row. Drop an entry once a version that fixes it is out.
+        blocked:
+          0.1.5-rc.1: >-
+            cannot resume sessions written by an earlier dsh; every resume fails
+            with 'cannot get property "agent" without inject'
+          0.1.5-rc.2: >-
+            same 0.1.5 line as rc.1, which cannot resume older sessions; not
+            tested here, so it is held back rather than assumed fixed

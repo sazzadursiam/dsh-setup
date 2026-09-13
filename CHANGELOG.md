@@ -35,6 +35,13 @@
   the port check only knew `lsof`, so it always said dsh was not running.
 - **The update button skipped npm's install-script allowlist**, installing a
   different dsh than `setup`/`update` do.
+- **The update button no longer offers dsh 0.1.5-rc.1 or 0.1.5-rc.2.** That
+  release cannot resume a session written by an earlier dsh — every resume ends
+  in `cannot get property "agent" without inject` — and the registry keeps
+  advertising it as `latest`. The row says what it is holding back and why, and
+  the apply route refuses those versions outright. The list lives in the
+  plugin's `cordis.patch.yml`, so it can be lifted without a code change once a
+  fixed dsh ships.
 
 ## [0.4.0] — 2026-09-10
 
