@@ -201,6 +201,7 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 | `templates/local.example.md`  | Starting point for `local.md` — your machine-specific rules |
 | `.env.example`                | Which environment variables you need                       |
 | `VERSION`                     | What version this checkout is                              |
+| `DSH_VERSION`                 | Which dsh version setup and update install — pinned, not `latest` |
 | `CHANGELOG.md`                | What changed and why                                       |
 | `LICENSE`                     | MIT                                                        |
 

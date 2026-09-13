@@ -79,10 +79,20 @@ if "%SKIP_DSH%"=="1" (
     if errorlevel 1 (
         echo   [WARN] npm not found - skipping
     ) else (
-        echo        This takes a few minutes.
+        REM Pinned, not "latest": the newest release is not always one this
+        REM setup can use, and an explicit version also moves a machine back
+        REM down if it already took a bad one. See the blocked list in
+        REM plugins\team-updater\cordis.patch.yml for what is avoided and why.
+        set "DSH_PIN="
+        if exist "%SCRIPT_DIR%\DSH_VERSION" (
+            for /f "usebackq delims=" %%v in ("%SCRIPT_DIR%\DSH_VERSION") do if not defined DSH_PIN set "DSH_PIN=%%v"
+        )
+        set "DSH_SPEC=@deepseek-ai/dsh"
+        if defined DSH_PIN set "DSH_SPEC=@deepseek-ai/dsh@!DSH_PIN!"
+        echo        Installing !DSH_PIN!. This takes a few minutes.
         REM Not `npm update -g`: that does not re-apply the allowlist, leaving
         REM the native modules unbuilt. See SETUP.md, Part 9.
-        call npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
+        call npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs !DSH_SPEC!
         if errorlevel 1 (
             echo   [WARN] dsh update failed - see the npm output above
         ) else (

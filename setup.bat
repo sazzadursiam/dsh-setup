@@ -56,9 +56,19 @@ if "%NEEDS_RESTART%"=="1" (
 )
 
 REM ---------- dsh ----------
-echo [3/3] Installing dsh...
+REM Pinned, not "latest": the newest release on the registry is not always one
+REM this setup can use. DSH_VERSION records the version we install; see the
+REM blocked list in plugins\team-updater\cordis.patch.yml for what is being
+REM avoided and why. Empty or missing file means "whatever is latest".
+set "DSH_PIN="
+if exist "%~dp0DSH_VERSION" (
+    for /f "usebackq delims=" %%v in ("%~dp0DSH_VERSION") do if not defined DSH_PIN set "DSH_PIN=%%v"
+)
+set "DSH_SPEC=@deepseek-ai/dsh"
+if defined DSH_PIN set "DSH_SPEC=@deepseek-ai/dsh@%DSH_PIN%"
+echo [3/3] Installing dsh %DSH_PIN%...
 echo       This takes a few minutes.
-call npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
+call npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs %DSH_SPEC%
 if errorlevel 1 goto :failed
 echo.
 

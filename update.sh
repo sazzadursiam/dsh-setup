@@ -73,12 +73,21 @@ if [ "$SKIP_DSH" -eq 1 ]; then
 elif ! command -v npm >/dev/null 2>&1; then
   warn "npm not found - skipping"
 else
-  say "       This takes a few minutes."
+  # Pinned, not "latest": the newest release is not always one this setup can
+  # use, and an explicit version also moves a machine back down if it already
+  # took a bad one. See plugins/team-updater/cordis.patch.yml for what is
+  # avoided and why.
+  DSH_SPEC="@deepseek-ai/dsh"
+  if [ -f "$SCRIPT_DIR/DSH_VERSION" ]; then
+    DSH_PIN="$(tr -d ' \t\r\n' < "$SCRIPT_DIR/DSH_VERSION")"
+    [ -n "$DSH_PIN" ] && DSH_SPEC="@deepseek-ai/dsh@$DSH_PIN"
+  fi
+  say "       Installing ${DSH_PIN:-latest}. This takes a few minutes."
   # Not `npm update -g`: that does not re-apply the allowlist, leaving the
   # native modules unbuilt. See SETUP.md, Part 9.
   npm install -g \
     --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs \
-    @deepseek-ai/dsh && ok "dsh updated" || warn "dsh update failed - see the npm output above"
+    "$DSH_SPEC" && ok "dsh updated" || warn "dsh update failed - see the npm output above"
 fi
 say ""
 

@@ -35,6 +35,13 @@
   the port check only knew `lsof`, so it always said dsh was not running.
 - **The update button skipped npm's install-script allowlist**, installing a
   different dsh than `setup`/`update` do.
+- **`setup` and `update` install a pinned dsh, not `latest`.** They were
+  installing whatever npm advertised, which is currently 0.1.5-rc.1 — so the
+  very script you run to pick up a fix would have installed the release that
+  breaks session resume. The version lives in the new `DSH_VERSION` file, and
+  because the install now names a version, `update` also brings a machine that
+  already took a bad release back down. The commands printed in `SETUP.md` are
+  pinned to match.
 - **The update button no longer offers dsh 0.1.5-rc.1 or 0.1.5-rc.2.** That
   release cannot resume a session written by an earlier dsh — every resume ends
   in `cannot get property "agent" without inject` — and the registry keeps

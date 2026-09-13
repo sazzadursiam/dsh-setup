@@ -95,10 +95,19 @@ fi
 say ""
 
 # ---------- 3. dsh ----------
-say "${BOLD}[3/3]${OFF} Installing dsh (this takes a few minutes)..."
+# Pinned, not "latest": the newest release on the registry is not always one
+# this setup can use. DSH_VERSION records the version we install; see the
+# blocked list in plugins/team-updater/cordis.patch.yml for what is being
+# avoided and why. Empty or missing file means "whatever is latest".
+DSH_SPEC="@deepseek-ai/dsh"
+if [ -f "$SCRIPT_DIR/DSH_VERSION" ]; then
+  DSH_PIN="$(tr -d ' \t\r\n' < "$SCRIPT_DIR/DSH_VERSION")"
+  [ -n "$DSH_PIN" ] && DSH_SPEC="@deepseek-ai/dsh@$DSH_PIN"
+fi
+say "${BOLD}[3/3]${OFF} Installing dsh ${DSH_PIN:-latest} (this takes a few minutes)..."
 npm install -g \
   --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs \
-  @deepseek-ai/dsh || die "dsh install failed. Check the npm output above."
+  "$DSH_SPEC" || die "dsh install failed. Check the npm output above."
 ok "dsh installed"
 
 say ""

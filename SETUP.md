@@ -67,10 +67,18 @@ If all three print version numbers, you are good.
 ### Step 2: Install dsh
 
 ```powershell
-npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
+npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh@0.1.2-rc.1
 ```
 
 The `--allow-scripts` part is essential. `node-pty` and `koffi` compile native binaries in an install script, and the shell/terminal tools do not work without them. **Do not remove it** — npm will not run a dependency's install scripts unless that package is allowlisted, so the native modules are silently never built (error: `Failed to load native module`).
+
+The version is pinned on purpose, and the setup scripts read it from the
+`DSH_VERSION` file rather than taking whatever npm calls `latest`. dsh is a
+developer preview, and a release can land that this setup cannot use: 0.1.5-rc.1
+cannot resume a session written by an earlier version, so every old session
+fails to open with `cannot get property "agent" without inject`. The in-app
+update button refuses those versions too — the list, with reasons, is in
+`plugins/team-updater/cordis.patch.yml`.
 
 <details>
 <summary>Why npm needs telling</summary>
@@ -143,7 +151,7 @@ git --version
 ### Step 2: Install dsh
 
 ```bash
-npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
+npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh@0.1.2-rc.1
 ```
 
 The `--allow-scripts` part is essential — Part 1 Step 2 explains why.
@@ -208,7 +216,7 @@ You need a separate Node (the distro-bundled one is often old):
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 source ~/.bashrc
 nvm install --lts
-npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
+npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh@0.1.2-rc.1
 dsh web
 ```
 
@@ -637,7 +645,7 @@ To build the whole system from scratch, follow this order. Details for each item
 
 - [ ] `winget install OpenJS.NodeJS.LTS` → **restart terminal** → verify `node -v`
 - [ ] `winget install Git.Git` → **restart terminal** → verify `git --version`
-- [ ] `npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh`
+- [ ] `npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh@0.1.2-rc.1`
 
 **dsh config**
 
@@ -687,7 +695,7 @@ That pulls this repo, runs the install command below, and rewrites
 `~/.dsh/AGENTS.md` with your remembered roles. To update only the npm package:
 
 ```powershell
-npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
+npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh@0.1.2-rc.1
 ```
 
 **Don't use `npm update -g`** — it doesn't re-apply the `--allow-scripts` allowlist, so the native modules (node-pty, koffi) are left unbuilt (`Cannot find module` / `.node file not found` error — see Part 8). The install command above is the correct way to update, and running it repeatedly is safe — if you're already on the latest it changes nothing.
@@ -793,7 +801,7 @@ dsh web                              # start
 Ctrl+C (in the dsh window)           # stop
 update.bat                           # update (repo + dsh + rules)
 check.bat                            # check for updates, ask before updating
-npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh   # update dsh only (not npm update — Part 9)
+npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh@0.1.2-rc.1   # update dsh only (not npm update — Part 9)
 dir %USERPROFILE%\.figma-console-mcp\plugin   # check plugin files
 ```
 
