@@ -120,11 +120,32 @@ REM the spec follows this checkout if it was moved. Adding it twice is a no-op.
 echo [+] Checking the in-app update button...
 set "DSH_PROFILE_DIR=%DSH_HOME%"
 if not defined DSH_PROFILE_DIR set "DSH_PROFILE_DIR=%USERPROFILE%\.dsh"
-if exist "%DSH_PROFILE_DIR%\profiles\web" (
-    call dsh plugin --profile web add "file:%SCRIPT_DIR%\plugins\team-updater" >nul 2>&1
+set "UPDATER_SPEC=file:%SCRIPT_DIR%\plugins\team-updater"
+set "UPDATER_ARG="%UPDATER_SPEC%""
+REM dsh runs pnpm through a shell on Windows without quoting its arguments, so
+REM a checkout path with a space reaches pnpm cut in two ("X:/My" not found).
+REM Quotes carried inside the argument survive that join; """...""" gives node
+REM the literal quotes while keeping the path inside cmd's own quoting, so a
+REM "(" or ")" in it cannot end the block below. Used only when the path has a
+REM space, so the plain form keeps working if dsh stops using a shell.
+if not "%UPDATER_SPEC: =%"=="%UPDATER_SPEC%" set "UPDATER_ARG="""%UPDATER_SPEC%""""
+set "UPDATER_LOG=%TEMP%\dsh-setup-plugin-add.log"
+REM pnpm itself cannot install from a path with brackets in it - it uses them in
+REM lockfile keys and fails with "Mismatch parenthesis" - so say so up front.
+set "UPDATER_BRACKETS="
+if not "%UPDATER_SPEC:(=%"=="%UPDATER_SPEC%" set "UPDATER_BRACKETS=1"
+if not "%UPDATER_SPEC:)=%"=="%UPDATER_SPEC%" set "UPDATER_BRACKETS=1"
+if defined UPDATER_BRACKETS (
+    echo   [WARN] Skipped: pnpm cannot install a plugin from a folder whose path
+    echo          contains a bracket. Move this checkout to a path without ^( or ^)
+    echo          and run this again.
+) else if exist "%DSH_PROFILE_DIR%\profiles\web" (
+    call dsh plugin --profile web add %UPDATER_ARG% > "%UPDATER_LOG%" 2>&1
     if errorlevel 1 (
-        echo   [WARN] Could not add it - run this by hand:
-        echo          dsh plugin --profile web add "file:%SCRIPT_DIR%\plugins\team-updater"
+        echo   [WARN] Could not add it. pnpm said:
+        type "%UPDATER_LOG%"
+        echo          Run this by hand once the cause is fixed:
+        echo          dsh plugin --profile web add %UPDATER_ARG%
     ) else (
         echo   [ OK ] Update button present - Settings ^> General
     )

@@ -43,6 +43,22 @@
 
 ### Fixed
 
+- **The checkout can live on any drive, and in a path with spaces.** Tested from
+  a separate drive letter with the dsh profile on `C:`. Three things broke along
+  the way:
+  - **A space in the checkout path stopped the update button being added.** dsh
+    runs pnpm through a shell on Windows without quoting its arguments, so
+    `X:\My Tools\dsh-setup` reached pnpm as `X:/My`. `setup.bat` and
+    `update.bat` now carry quotes inside the argument when the path has a space.
+  - **A bracket in the checkout path broke `agents.bat` outright** —
+    `...\templates\core.md was unexpected at this time` — because a `)` in a
+    path echoed inside a block ended the block early. Paths inside blocks are
+    now echoed with delayed expansion.
+  - **pnpm itself cannot install from a path containing `(` or `)`**
+    ("Mismatch parenthesis"), so that case now skips the button with a clear
+    reason instead of failing.
+  When adding the plugin does fail, pnpm's own message is now shown; before, the
+  output was discarded and only "could not add it" remained.
 - **`update.bat` could derail when its own pull changed it.** cmd.exe reads a
   batch file from disk as it runs, so after `git pull` rewrote `update.bat` the
   rest of the run continued in the *new* file at the *old* file's byte offset —

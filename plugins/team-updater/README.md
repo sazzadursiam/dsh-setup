@@ -49,11 +49,17 @@ added by hand from a copy outside any checkout — it falls back to following
 ## Install
 
 `setup.bat` / `setup.sh` and `update.bat` / `update.sh` in the repo root do this
-for you once the `web` profile exists. By hand, from the repo root:
+for you once the `web` profile exists. By hand, from the repo root in cmd:
 
-```powershell
-dsh plugin --profile web add file:%CD%\plugins\team-updater
 ```
+dsh plugin --profile web add "file:%CD%\plugins\team-updater"
+```
+
+If that path contains a space, use `"""file:%CD%\plugins\team-updater"""`
+instead. dsh 0.1.2-rc.1 hands the arguments to pnpm through a shell on Windows
+without quoting them, so a plain quoted path arrives split at the space; the
+extra quotes survive that step. A path containing `(` or `)` cannot be used at
+all — pnpm rejects it with "Mismatch parenthesis".
 
 `dsh plugin` forwards to pnpm inside `$DSH_HOME/profiles/web`, and because this
 package declares `dsh.bundle.patch` it is appended to `dsh.profile.bundles`

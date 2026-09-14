@@ -41,6 +41,12 @@ route:
 - `winget install Git.Git` on Windows / `brew install git` on macOS, open a new
   terminal, then clone as above.
 
+**Where to put it.** Any folder, on any drive — it does not need to sit next to
+your projects, and your projects can live on other drives, since nothing here
+reads or writes project folders. Spaces in the path are fine. One limit: keep
+`(` and `)` out of the checkout's path. pnpm cannot install the update-button
+plugin from such a folder, so `setup` and `update` skip that one step and say so.
+
 The script installs Node.js, Git and dsh. It prints the remaining manual steps when it finishes.
 
 On Windows, if the script installs Node or Git, it stops and asks you to reopen the terminal — Windows only picks up new PATH entries in a fresh one.

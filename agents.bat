@@ -27,12 +27,15 @@ set "TPL=%SCRIPT_DIR%\templates"
 set "ROLES_DIR=%TPL%\roles"
 set "INDEX=%ROLES_DIR%\index.txt"
 
+REM Paths are echoed as !VAR! inside blocks: cmd parses a whole block before it
+REM runs, so a ")" in a %VAR% path - "D:\Work (2026)\..." - would end the block
+REM early. Delayed expansion happens after that parse.
 if not exist "%TPL%\core.md" (
-    echo   [FAIL] Missing %TPL%\core.md - is this a complete checkout?
+    echo   [FAIL] Missing !TPL!\core.md - is this a complete checkout?
     exit /b 1
 )
 if not exist "%INDEX%" (
-    echo   [FAIL] Missing %INDEX% - is this a complete checkout?
+    echo   [FAIL] Missing !INDEX! - is this a complete checkout?
     exit /b 1
 )
 
@@ -61,7 +64,7 @@ for /f "usebackq eol=# tokens=1,* delims=|" %%a in ("%INDEX%") do (
     )
 )
 if %N%==0 (
-    echo   [FAIL] No usable roles found in %INDEX%
+    echo   [FAIL] No usable roles found in !INDEX!
     exit /b 1
 )
 set "ALL="
@@ -176,7 +179,7 @@ if "!REM_LANG:~-1!"==" " (
 
 if "%SHOW%"=="1" (
     echo.
-    echo   target : %TARGET%
+    echo   target : !TARGET!
     if exist "%TARGET%" (
         if "%OURS%"=="0" (
             echo   roles  : unknown - this file was not written by agents.bat
@@ -282,12 +285,12 @@ if defined BADROLE (
 REM ---------- protect anything we did not write ----------
 if not exist "%DSH_DIR%" mkdir "%DSH_DIR%" 2>nul
 if not exist "%DSH_DIR%" (
-    echo   [FAIL] Cannot create %DSH_DIR%
+    echo   [FAIL] Cannot create !DSH_DIR!
     exit /b 1
 )
 if exist "%TARGET%" if "%OURS%"=="0" (
     copy /y "%TARGET%" "%TARGET%.bak" >nul
-    echo   [WARN] %TARGET% was not written by this script - saved a copy as AGENTS.md.bak
+    echo   [WARN] !TARGET! was not written by this script - saved a copy as AGENTS.md.bak
 )
 
 REM ---------- assemble ----------
@@ -339,7 +342,7 @@ if exist "%TARGET%" (
 )
 move /y "%TMPF%" "%TARGET%" >nul
 if errorlevel 1 (
-    echo   [FAIL] Cannot write %TARGET%
+    echo   [FAIL] Cannot write !TARGET!
     if exist "%TMPF%" del "%TMPF%" >nul 2>&1
     exit /b 1
 )
@@ -347,9 +350,9 @@ if errorlevel 1 (
 if "%CHOSEN%"=="" (set "SHOWR=core only") else (set "SHOWR=%CHOSEN%")
 for %%f in ("%TARGET%") do set "BYTES=%%~zf"
 if "%CHANGED%"=="0" (
-    echo   [ OK ] %TARGET% already current ^(%SHOWR%, %BYTES% bytes^)
+    echo   [ OK ] !TARGET! already current ^(%SHOWR%, %BYTES% bytes^)
 ) else (
-    echo   [ OK ] Wrote %TARGET% ^(%SHOWR%, %BYTES% bytes^)
+    echo   [ OK ] Wrote !TARGET! ^(%SHOWR%, %BYTES% bytes^)
     echo   [INFO] Reply language: !LANG_ARG!
     REM dsh's default budget for the whole rendered instruction baseline.
     if %BYTES% GTR 65536 echo   [WARN] That is over dsh's default 65536-byte instruction budget - it will be truncated.

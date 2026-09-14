@@ -117,15 +117,24 @@ say ""
 # machine this is a hint rather than a step. `dsh plugin ... add` appends the
 # bundle by itself, because the package declares dsh.bundle.patch.
 say "${BOLD}[+]${OFF} Adding the in-app update button..."
-if [ -d "${DSH_HOME:-$HOME/.dsh}/profiles/web" ]; then
-  if dsh plugin --profile web add "file:$SCRIPT_DIR/plugins/team-updater" >/dev/null 2>&1; then
-    ok "Update button added - Settings > General, after a restart"
-  else
-    warn "Could not add it - run: dsh plugin --profile web add file:$SCRIPT_DIR/plugins/team-updater"
-  fi
-else
-  warn "No web profile yet - run 'dsh web' once, then re-run this script"
-fi
+UPDATER_LOG="${TMPDIR:-/tmp}/dsh-setup-plugin-add.log"
+case "$SCRIPT_DIR" in
+  # pnpm uses brackets in lockfile keys and fails with "Mismatch parenthesis".
+  *'('*|*')'*)
+    warn "Skipped: pnpm cannot install a plugin from a folder whose path contains a bracket."
+    say  "        Move this checkout to a path without ( or ) and run this again." ;;
+  *)
+    if [ ! -d "${DSH_HOME:-$HOME/.dsh}/profiles/web" ]; then
+      warn "No web profile yet - run 'dsh web' once, then re-run this script"
+    elif dsh plugin --profile web add "file:$SCRIPT_DIR/plugins/team-updater" >"$UPDATER_LOG" 2>&1; then
+      ok "Update button added - Settings > General, after a restart"
+    else
+      warn "Could not add it. pnpm said:"
+      sed 's/^/        /' "$UPDATER_LOG"
+      say  "        Run this by hand once the cause is fixed:"
+      say  "        dsh plugin --profile web add \"file:$SCRIPT_DIR/plugins/team-updater\""
+    fi ;;
+esac
 
 say ""
 
