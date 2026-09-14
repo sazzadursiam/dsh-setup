@@ -24,7 +24,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readPin } from './pin.js';
+import { readAllowScripts, readPin } from './pin.js';
 import { isNewer, isVersionLike } from './version.js';
 
 /** Stable Cordis plugin name. */
@@ -35,12 +35,6 @@ const inject = ['webServer', 'connection'];
 const ROUTE_BASE = '/team-updater';
 /** The package this plugin updates. */
 const PACKAGE_NAME = '@deepseek-ai/dsh';
-/**
- * Kept in step with the same list in update-runner.mjs — which cannot import it,
- * since it must keep running while this package is being replaced — and with
- * setup.sh / setup.bat / update.sh / update.bat.
- */
-const ALLOW_SCRIPTS = '@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs';
 const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
 const DEFAULT_TAG = 'latest';
 /** A registry answer is reused for this long before `status` refetches. */
@@ -131,9 +125,13 @@ async function fetchRegistryVersion(options) {
 	return { latest: resolved, tag: options.tag, distTags, exact: false, published: true };
 }
 
-/** The update command shown as the manual fallback in the UI. */
-function manualCommand(version) {
-	return `npm install -g --allow-scripts=${ALLOW_SCRIPTS} ${PACKAGE_NAME}@${version}`;
+/**
+ * The update command shown as the manual fallback in the UI. The allowlist
+ * comes from the checkout's DSH_ALLOW_SCRIPTS, the same file setup and update
+ * install with, since it changes along with the pinned version.
+ */
+function manualCommand(version, allowScripts) {
+	return `npm install -g --allow-scripts=${allowScripts} ${PACKAGE_NAME}@${version}`;
 }
 
 /** Log file and its directory for one process. */
@@ -218,7 +216,7 @@ async function readJsonBody(request) {
  * terminator is what an installer would do anyway.
  * @returns the runner's pid and the log path.
  */
-async function startUpdate({ options, version, parentPid, argv, quit }) {
+async function startUpdate({ options, version, allowScripts, parentPid, argv, quit }) {
 	const { directory, logPath } = logPaths();
 	await mkdir(directory, { recursive: true });
 	const runner = fileURLToPath(new URL('./update-runner.mjs', import.meta.url));
@@ -227,6 +225,7 @@ async function startUpdate({ options, version, parentPid, argv, quit }) {
 		'--parent-pid', String(parentPid),
 		'--package', PACKAGE_NAME,
 		'--version', version,
+		'--allow-scripts', allowScripts,
 		'--cwd', process.cwd(),
 		'--log', logPath,
 		'--registry', options.registry,
@@ -255,7 +254,9 @@ function apply(ctx, config) {
 		const current = await readInstalledVersion();
 		const pin = await readPin(options.versionFile);
 		const pinned = pin?.version ?? null;
-		const pinError = pin?.error ?? null;
+		const allow = await readAllowScripts(options.versionFile);
+		// Either file being unreadable stops the row: both decide what gets installed.
+		const pinError = pin?.error ?? allow.error ?? null;
 		const registry = await fetchRegistryVersion(pinned === null ? options : { ...options, tag: pinned });
 		const blockedReason = blockedReasonFor(registry.latest, options.blocked);
 		// Pinned, the row converges on the pin in either direction: a machine that
@@ -275,6 +276,8 @@ function apply(ctx, config) {
 			pinned,
 			pinFile: pin?.path ?? null,
 			pinError,
+			allowScripts: allow.list,
+			allowScriptsFile: allow.path,
 			published: registry.published,
 			exact: registry.exact,
 			distTags: registry.distTags,
@@ -283,7 +286,7 @@ function apply(ctx, config) {
 			checkedAt: new Date(now).toISOString(),
 			// No copyable command while the pin is unreadable: the only version to
 			// hand would be the registry's, which is exactly what must not be offered.
-			command: pinError === null ? manualCommand(registry.latest) : undefined,
+			command: pinError === null ? manualCommand(registry.latest, allow.list) : undefined,
 			logPath: logPaths().logPath
 		};
 		cached = { at: now, value };
@@ -350,13 +353,13 @@ function apply(ctx, config) {
 		}
 		const quit = body.quit === true;
 		const argv = process.argv.slice(2);
-		const started = await startUpdate({ options, version, parentPid: process.pid, argv, quit });
+		const started = await startUpdate({ options, version, allowScripts: current.allowScripts, parentPid: process.pid, argv, quit });
 		writeJson(response, 202, {
 			started: true,
 			version,
 			restart: options.restart,
 			quit,
-			command: manualCommand(version),
+			command: manualCommand(version, current.allowScripts),
 			...started
 		});
 	});

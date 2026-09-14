@@ -32,7 +32,7 @@ REM ---------- dsh ----------
 where dsh >nul 2>&1
 if errorlevel 1 (
     echo   [FAIL] dsh not found
-    echo          npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh
+    echo          Run setup.bat - it installs the pinned version with the right allowlist.
     set FAIL=1
 ) else (
     echo   [ OK ] dsh installed
@@ -75,6 +75,8 @@ if not exist "%CFG%" (
         set FAIL=1
     ) else (
         echo   [ OK ] MCP config has the figma entry
+        where node >nul 2>&1
+        if not errorlevel 1 node "%~dp0scripts\figma-pin.mjs" --check
     )
 )
 

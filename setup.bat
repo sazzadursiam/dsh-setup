@@ -66,9 +66,20 @@ if exist "%~dp0DSH_VERSION" (
 )
 set "DSH_SPEC=@deepseek-ai/dsh"
 if defined DSH_PIN set "DSH_SPEC=@deepseek-ai/dsh@%DSH_PIN%"
+REM The packages whose install scripts npm may run. It belongs to the pinned
+REM version - a new dsh can bring a new native dependency - so it lives in
+REM DSH_ALLOW_SCRIPTS next to DSH_VERSION, read by every install path.
+set "DSH_ALLOW="
+if exist "%~dp0DSH_ALLOW_SCRIPTS" (
+    for /f "usebackq tokens=1" %%v in ("%~dp0DSH_ALLOW_SCRIPTS") do if not defined DSH_ALLOW set "DSH_ALLOW=%%v"
+)
+if not defined DSH_ALLOW (
+    echo DSH_ALLOW_SCRIPTS is missing or empty - this checkout is incomplete.
+    goto :failed
+)
 echo [3/3] Installing dsh %DSH_PIN%...
 echo       This takes a few minutes.
-call npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs %DSH_SPEC%
+call npm install -g --allow-scripts=%DSH_ALLOW% %DSH_SPEC%
 if errorlevel 1 goto :failed
 echo.
 

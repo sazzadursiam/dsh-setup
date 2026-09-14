@@ -16,6 +16,7 @@
 *.txt        text eol=lf
 VERSION      text eol=lf
 DSH_VERSION  text eol=lf
+DSH_ALLOW_SCRIPTS text eol=lf
 *.yml        text eol=lf
 *.yaml       text eol=lf
 .env.example text eol=lf

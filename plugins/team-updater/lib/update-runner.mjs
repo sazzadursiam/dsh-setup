@@ -19,16 +19,6 @@ const WAIT_TIMEOUT_MS = 30 * 60 * 1000;
 const WAIT_POLL_MS = 500;
 const INSTALL_TIMEOUT_MS = 10 * 60 * 1000;
 
-/**
- * npm skips these packages' install scripts unless they are named here, which
- * left this runner installing a different dsh than setup.sh / setup.bat /
- * update.sh / update.bat do. It matters on macOS and Linux, where node-pty
- * ships spawn-helper without its executable bit and dsh-subprocess-local's
- * postinstall is what restores it; on Windows the prebuilds are used as-is.
- * Keep this list in step with those four scripts in dsh-setup.
- */
-const ALLOW_SCRIPTS = '@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs';
-
 /** Parse `--key value` pairs, keeping everything after `--` as the relaunch argv. */
 function parseArguments(argv) {
 	const values = {};
@@ -174,6 +164,17 @@ async function main() {
 	}
 	await mkdir(dirname(logPath), { recursive: true });
 	const log = makeLogger(logPath);
+	// npm skips a dependency's install scripts unless its package is named here,
+	// which matters on macOS and Linux: node-pty ships spawn-helper without its
+	// executable bit and dsh-subprocess-local's postinstall restores it. The host
+	// half reads the list from the checkout's DSH_ALLOW_SCRIPTS. Checked before
+	// dsh is touched: a host half older than this runner does not pass it, and
+	// quitting dsh for an install that cannot be done right would be worse.
+	const allowScripts = values['allow-scripts'];
+	if (typeof allowScripts !== 'string' || allowScripts.length === 0) {
+		await log('no --allow-scripts from the running dsh, which predates this runner; nothing was changed. Restart dsh and click Update again.');
+		process.exit(2);
+	}
 	const quit = values.quit === 'yes';
 	await log(`staged: install ${packageName}@${version} (registry ${registry}, restart ${restart ? 'yes' : 'no'}, quit ${quit ? 'yes' : 'no'})`);
 	if (quit && Number.isFinite(parentPid) && parentPid > 0) {
@@ -187,7 +188,7 @@ async function main() {
 		// Windows releases mapped addons slightly after the process disappears.
 		await new Promise((settle) => setTimeout(settle, 1_500));
 	}
-	const installArgs = ['install', '-g', `--allow-scripts=${ALLOW_SCRIPTS}`, `${packageName}@${version}`];
+	const installArgs = ['install', '-g', `--allow-scripts=${allowScripts}`, `${packageName}@${version}`];
 	if (typeof registry === 'string' && registry.length > 0) installArgs.push('--registry', registry);
 	const installed = await runNpm(installArgs, cwd, INSTALL_TIMEOUT_MS);
 	await log(`npm ${installArgs.join(' ')} exited ${installed.code}`);

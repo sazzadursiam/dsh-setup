@@ -21,6 +21,22 @@
 
 ### Changed
 
+- **The Figma MCP server is pinned to 1.40.0 instead of `@latest`.** With
+  `@latest`, every dsh start ran whatever had been published last, on every
+  machine at once — the same exposure that pinning dsh removed. `update` now
+  carries the version in `cordis.patch.yml` into the profile's copy, rewriting
+  only the `figma-console-mcp@…` entry and leaving the rest of that hand-edited
+  file alone; `verify` reports a profile that differs. An existing profile on
+  `@latest` moves to 1.40.0 on its next `update` — the version `@latest`
+  resolved to at the time, so nothing changes in practice.
+- **The `--allow-scripts` list has one source, `DSH_ALLOW_SCRIPTS`.** It was
+  written out in six places — four scripts, the update button and its runner —
+  so a dsh release adding a native dependency meant six edits, and a missed one
+  meant one install path silently skipping a package's install script. `setup`,
+  `update` and the button now read the file; the button hands it to the runner,
+  and refuses to update when the file is malformed. The plugin's fallback list
+  and the commands in `SETUP.md` remain copies, and `tests/check.mjs` fails when
+  they drift. `verify` now points at `setup` instead of printing the command.
 - **`update` no longer stops to ask for roles.** Roles were already optional —
   Enter meant "none" — but a machine with no rules file yet got the question in
   the middle of an update, which read as something having gone wrong. `update`

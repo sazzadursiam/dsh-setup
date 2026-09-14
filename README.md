@@ -111,7 +111,8 @@ file: the global file is per-machine and does not travel with a clone.
 ## Updating
 
 One command pulls this repo, updates dsh with the right `--allow-scripts`
-allowlist, and rewrites your agent rules:
+allowlist, moves your Figma MCP to the version in `cordis.patch.yml`, and
+rewrites your agent rules:
 
 ```
 update.bat          # Windows
@@ -211,6 +212,8 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 | `.env.example`                | Which environment variables you need                       |
 | `VERSION`                     | What version this checkout is                              |
 | `DSH_VERSION`                 | Which dsh version setup and update install — pinned, not `latest` |
+| `DSH_ALLOW_SCRIPTS`           | Which packages npm may run install scripts for when installing that dsh |
+| `scripts/figma-pin.mjs`       | Keeps your profile's Figma MCP version in step with `cordis.patch.yml` |
 | `CHANGELOG.md`                | What changed and why                                       |
 | `LICENSE`                     | MIT                                                        |
 

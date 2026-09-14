@@ -41,7 +41,7 @@ if command -v dsh >/dev/null 2>&1; then
   pass "dsh installed"
 else
   fail "dsh not found"
-  hint "npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs @deepseek-ai/dsh"
+  hint "Run ./setup.sh - it installs the pinned version with the right allowlist."
 fi
 
 # ---------- Figma token ----------
@@ -71,6 +71,7 @@ if [ ! -f "$CFG" ]; then
   hint "Run dsh web once to create the profile, then copy the config."
 elif grep -q "serverName: figma" "$CFG"; then
   pass "MCP config has the figma entry"
+  command -v node >/dev/null 2>&1 && node "$(cd "$(dirname "$0")" && pwd)/scripts/figma-pin.mjs" --check
 else
   fail "cordis.patch.yml has no figma entry"
   hint "cp cordis.patch.yml ~/.dsh/profiles/web/"

@@ -101,14 +101,23 @@ if "%SKIP_DSH%"=="1" (
         )
         set "DSH_SPEC=@deepseek-ai/dsh"
         if defined DSH_PIN set "DSH_SPEC=@deepseek-ai/dsh@!DSH_PIN!"
-        echo        Installing !DSH_PIN!. This takes a few minutes.
-        REM Not `npm update -g`: that does not re-apply the allowlist, leaving
-        REM the native modules unbuilt. See SETUP.md, Part 9.
-        call npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs !DSH_SPEC!
-        if errorlevel 1 (
-            echo   [WARN] dsh update failed - see the npm output above
+        REM The allowlist belongs to the pinned version, so it sits beside it.
+        set "DSH_ALLOW="
+        if exist "%SCRIPT_DIR%\DSH_ALLOW_SCRIPTS" (
+            for /f "usebackq tokens=1" %%v in ("%SCRIPT_DIR%\DSH_ALLOW_SCRIPTS") do if not defined DSH_ALLOW set "DSH_ALLOW=%%v"
+        )
+        if not defined DSH_ALLOW (
+            echo   [WARN] DSH_ALLOW_SCRIPTS is missing or empty - not updating dsh
         ) else (
-            echo   [ OK ] dsh updated
+            echo        Installing !DSH_PIN!. This takes a few minutes.
+            REM Not `npm update -g`: that does not re-apply the allowlist, leaving
+            REM the native modules unbuilt. See SETUP.md, Part 9.
+            call npm install -g --allow-scripts=!DSH_ALLOW! !DSH_SPEC!
+            if errorlevel 1 (
+                echo   [WARN] dsh update failed - see the npm output above
+            ) else (
+                echo   [ OK ] dsh updated
+            )
         )
     )
 )
@@ -160,6 +169,18 @@ if defined UPDATER_BRACKETS (
     )
 ) else (
     echo   [WARN] No web profile yet - run "dsh web" once, then re-run this script
+)
+echo.
+
+REM ---------- the Figma MCP version ----------
+REM The profile's cordis.patch.yml was copied in by hand once, so a version bump
+REM in this repo would never reach it. Only the version token is rewritten.
+echo [+] Checking the Figma MCP version...
+where node >nul 2>&1
+if errorlevel 1 (
+    echo   [WARN] node not found - skipping
+) else (
+    node "%SCRIPT_DIR%\scripts\figma-pin.mjs"
 )
 echo.
 

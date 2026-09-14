@@ -20,6 +20,12 @@
 # Windows tip: most setups work with "npx" as-is. If the figma tools fail to
 # load and dsh spawns stdio without a shell, change "command: npx" to
 # "command: npx.cmd" — the .cmd shim is what cmd.exe actually resolves.
+#
+# The server version is pinned, not @latest: every dsh start would otherwise
+# run whatever was published last, on every machine at once. To move to a new
+# release, change the version here after trying it. update.bat / update.sh
+# carry the new version into an existing profile by rewriting only the version
+# in that args entry, and verify reports a profile that differs.
 
 - insert:
     - id: mcp-figma
@@ -28,4 +34,4 @@
         serverName: figma
         transport: stdio
         command: npx
-        args: ["-y", "figma-console-mcp@latest"]
+        args: ["-y", "figma-console-mcp@1.40.0"]

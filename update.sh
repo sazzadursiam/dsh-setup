@@ -90,12 +90,17 @@ else
     DSH_PIN="$(tr -d ' \t\r\n' < "$SCRIPT_DIR/DSH_VERSION")"
     [ -n "$DSH_PIN" ] && DSH_SPEC="@deepseek-ai/dsh@$DSH_PIN"
   fi
-  say "       Installing ${DSH_PIN:-latest}. This takes a few minutes."
-  # Not `npm update -g`: that does not re-apply the allowlist, leaving the
-  # native modules unbuilt. See SETUP.md, Part 9.
-  npm install -g \
-    --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs \
-    "$DSH_SPEC" && ok "dsh updated" || warn "dsh update failed - see the npm output above"
+  # The allowlist belongs to the pinned version, so it sits beside it.
+  DSH_ALLOW="$(tr -d ' \t\r\n' < "$SCRIPT_DIR/DSH_ALLOW_SCRIPTS" 2>/dev/null)"
+  if [ -z "$DSH_ALLOW" ]; then
+    warn "DSH_ALLOW_SCRIPTS is missing or empty - not updating dsh"
+  else
+    say "       Installing ${DSH_PIN:-latest}. This takes a few minutes."
+    # Not `npm update -g`: that does not re-apply the allowlist, leaving the
+    # native modules unbuilt. See SETUP.md, Part 9.
+    npm install -g --allow-scripts="$DSH_ALLOW" "$DSH_SPEC" \
+      && ok "dsh updated" || warn "dsh update failed - see the npm output above"
+  fi
 fi
 say ""
 
@@ -130,6 +135,17 @@ case "$SCRIPT_DIR" in
       fi
     fi ;;
 esac
+say ""
+
+# ---------- the Figma MCP version ----------
+# The profile's cordis.patch.yml was copied in by hand once, so a version bump in
+# this repo would never reach it. Only the version token is rewritten.
+say "${BOLD}[+]${OFF} Checking the Figma MCP version..."
+if command -v node >/dev/null 2>&1; then
+  node "$SCRIPT_DIR/scripts/figma-pin.mjs"
+else
+  warn "node not found - skipping"
+fi
 say ""
 
 # ---------- 3. the shared agent rules ----------

@@ -104,10 +104,13 @@ if [ -f "$SCRIPT_DIR/DSH_VERSION" ]; then
   DSH_PIN="$(tr -d ' \t\r\n' < "$SCRIPT_DIR/DSH_VERSION")"
   [ -n "$DSH_PIN" ] && DSH_SPEC="@deepseek-ai/dsh@$DSH_PIN"
 fi
+# The packages whose install scripts npm may run. It belongs to the pinned
+# version - a new dsh can bring a new native dependency - so it lives in
+# DSH_ALLOW_SCRIPTS next to DSH_VERSION, read by every install path.
+DSH_ALLOW="$(tr -d ' \t\r\n' < "$SCRIPT_DIR/DSH_ALLOW_SCRIPTS" 2>/dev/null)"
+[ -n "$DSH_ALLOW" ] || die "DSH_ALLOW_SCRIPTS is missing or empty - this checkout is incomplete."
 say "${BOLD}[3/3]${OFF} Installing dsh ${DSH_PIN:-latest} (this takes a few minutes)..."
-npm install -g \
-  --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs \
-  "$DSH_SPEC" || die "dsh install failed. Check the npm output above."
+npm install -g --allow-scripts="$DSH_ALLOW" "$DSH_SPEC" || die "dsh install failed. Check the npm output above."
 ok "dsh installed"
 
 say ""

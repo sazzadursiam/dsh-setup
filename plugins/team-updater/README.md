@@ -39,8 +39,12 @@ checkout through the `file:` spec `setup` recorded in the profile's
 `package.json`. The file is read on every check, so a `git pull` that changes
 the pin reaches the row without reinstalling the plugin.
 
+The install-script allowlist is read the same way, from `DSH_ALLOW_SCRIPTS`
+beside `DSH_VERSION`, and handed to the runner with the version.
+
 It refuses rather than guesses: a `DSH_VERSION` holding something that is not a
-version, or a pinned version the registry has not published, stops the row from
+version, a `DSH_ALLOW_SCRIPTS` that is not a comma-separated package list, or a
+pinned version the registry has not published, stops the row from
 offering anything, since the runner quits dsh before npm runs and a failed
 install would leave dsh stopped. With no `DSH_VERSION` found at all — a profile
 added by hand from a copy outside any checkout — it falls back to following
@@ -84,7 +88,10 @@ mapped DLL. So `POST /team-updater/apply` only *stages* the work:
 2. With `quit: true` the runner asks dsh to quit (`taskkill` without `/f`
    first, then `/f`; `SIGTERM` on POSIX).
 3. Runner waits for the pid to disappear, pauses 1.5 s for Windows to release
-   the mappings, then runs `npm install -g @deepseek-ai/dsh@<version>`.
+   the mappings, then runs
+   `npm install -g --allow-scripts=<list> @deepseek-ai/dsh@<version>`. A runner
+   started without a list — by a dsh still running an older copy of this
+   plugin — stops before quitting anything and logs why.
 4. It verifies the installed version through `npm root -g`, then relaunches
    `dsh` with the original arguments in the original directory.
 5. Every step is appended to `%TEMP%\dsh-team-updater\update.log`, which the
@@ -117,7 +124,9 @@ plugin composes only `webServer` and `connection` and adds no policy of its own.
 
 - `node tests/check.mjs` — version ordering, finding the pin in both the
   checkout and the profile-copy layout (absolute and relative `file:` specs,
-  empty and malformed pins, a missing explicit `versionFile`), the shipped
+  empty and malformed pins, a missing explicit `versionFile`), finding and
+  validating `DSH_ALLOW_SCRIPTS` the same way, the built-in fallback list and
+  SETUP.md's install commands matching the checkout's files, the shipped
   blocked list, and the real registry lookup.
 - The row renders in Settings → General — pinned, it reads
   "0.1.2-rc.1 · up to date, pinned by dsh-setup" with only *Check for updates*

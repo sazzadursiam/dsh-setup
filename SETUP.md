@@ -72,6 +72,10 @@ npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,
 
 The `--allow-scripts` part is essential. `node-pty` and `koffi` compile native binaries in an install script, and the shell/terminal tools do not work without them. **Do not remove it** — npm will not run a dependency's install scripts unless that package is allowlisted, so the native modules are silently never built (error: `Failed to load native module`).
 
+The list belongs to the dsh version, since a new release can bring a new native
+dependency. The scripts and the in-app update button read it from the
+`DSH_ALLOW_SCRIPTS` file; the commands in this guide are copies of it.
+
 The version is pinned on purpose, and the setup scripts read it from the
 `DSH_VERSION` file rather than taking whatever npm calls `latest`. dsh is a
 developer preview, and a release can land that this setup cannot use: 0.1.5-rc.1
@@ -386,10 +390,14 @@ If the file only contains `[]`, delete that and paste the following (keep the co
         serverName: figma
         transport: stdio
         command: npx
-        args: ["-y", "figma-console-mcp@latest"]
+        args: ["-y", "figma-console-mcp@1.40.0"]
 ```
 
 **Keep the indentation exact** — YAML is strict about spaces, no tabs.
+
+The version is pinned for the same reason dsh is: with `@latest`, every machine
+runs a new release the moment it is published. `update.bat` / `update.sh` keep
+this line in step with the repo's `cordis.patch.yml`, changing only the version.
 
 Save, then restart dsh. In the window where `dsh web` is running press **Ctrl+C**, then start it again:
 

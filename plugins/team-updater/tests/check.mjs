@@ -9,12 +9,11 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { readPin } from '../lib/pin.js';
+import { DEFAULT_ALLOW_SCRIPTS, readAllowScripts, readPin } from '../lib/pin.js';
 import { isNewer, compareVersions } from '../lib/version.js';
 
 const PACKAGE_NAME = '@deepseek-ai/dsh';
 const REGISTRY = 'https://registry.npmjs.org';
-const ALLOW_SCRIPTS = '@deepseek-ai/dsh-subprocess-local,koffi,node-pty,@google/genai,protobufjs';
 
 let failures = 0;
 function check(label, actual, expected) {
@@ -59,8 +58,42 @@ try {
 	check('no DSH_VERSION anywhere means unpinned', await readPin(null, inProfile), null);
 	const missing = await readPin(join(sandbox, 'nope', 'DSH_VERSION'), inProfile);
 	check('an explicit versionFile that is missing is an error', missing?.version === null && typeof missing?.error === 'string', true);
+
+	// The allowlist is found the same way, beside where DSH_VERSION would be.
+	check('no DSH_ALLOW_SCRIPTS falls back to the default', (await readAllowScripts(null, inProfile)).list, DEFAULT_ALLOW_SCRIPTS);
+	await writeFile(join(checkout, 'DSH_ALLOW_SCRIPTS'), 'koffi,@scope/native-thing\r\n');
+	check('checkout layout reads DSH_ALLOW_SCRIPTS', (await readAllowScripts(null, inCheckout)).list, 'koffi,@scope/native-thing');
+	check('profile copy reads DSH_ALLOW_SCRIPTS through the file: spec', (await readAllowScripts(null, inProfile)).list, 'koffi,@scope/native-thing');
+	check('an explicit versionFile looks beside itself', (await readAllowScripts(join(checkout, 'DSH_VERSION'), inProfile)).list, 'koffi,@scope/native-thing');
+	for (const bad of ['', 'koffi & calc', 'koffi, node-pty', 'koffi,,node-pty']) {
+		await writeFile(join(checkout, 'DSH_ALLOW_SCRIPTS'), `${bad}\n`);
+		const broken = await readAllowScripts(null, inCheckout);
+		check(`malformed allowlist ${JSON.stringify(bad)} is an error`, broken.list === null && typeof broken.error === 'string', true);
+	}
 } finally {
 	await rm(sandbox, { recursive: true, force: true });
+}
+
+// ── the checkout this copy ships in ─────────────────────────────────────────
+// The pins have one source each, but a few copies cannot read it: the default
+// above, and commands in SETUP.md meant for pasting. These fail when a copy drifts.
+const repoFile = (name) => readFile(new URL(`../../../${name}`, import.meta.url), 'utf8').catch(() => null);
+const allowFile = await repoFile('DSH_ALLOW_SCRIPTS');
+const ALLOW_SCRIPTS = allowFile?.trim() ?? DEFAULT_ALLOW_SCRIPTS;
+if (allowFile === null) {
+	console.log('skip checkout checks: not running from a dsh-setup checkout');
+} else {
+	check('built-in default matches DSH_ALLOW_SCRIPTS', DEFAULT_ALLOW_SCRIPTS, ALLOW_SCRIPTS);
+	const setupDoc = await repoFile('SETUP.md');
+	const pin = (await repoFile('DSH_VERSION')).trim();
+	const dshCommands = [...setupDoc.matchAll(/npm install -g --allow-scripts=(\S+) @deepseek-ai\/dsh(@[0-9A-Za-z.-]+)?/g)];
+	check('SETUP.md has dsh install commands', dshCommands.length > 0, true);
+	check('every SETUP.md install command uses DSH_ALLOW_SCRIPTS', dshCommands.every((m) => m[1] === ALLOW_SCRIPTS), true);
+	check('every SETUP.md install command uses DSH_VERSION', dshCommands.every((m) => m[2] === `@${pin}`), true);
+	const figmaPin = (text) => [...text.matchAll(/["']figma-console-mcp(?:@([^"'\s]+))?["']/g)].map((m) => m[1] ?? 'latest');
+	const figmaInConfig = figmaPin(await repoFile('cordis.patch.yml'));
+	check('cordis.patch.yml pins an exact figma-console-mcp', /^\d+\.\d+\.\d+/.test(figmaInConfig[0] ?? ''), true);
+	check('SETUP.md shows the same figma-console-mcp version', figmaPin(setupDoc).every((v) => v === figmaInConfig[0]), true);
 }
 
 // ── registry lookup, exactly as the host half does it ───────────────────────
