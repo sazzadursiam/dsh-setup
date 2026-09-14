@@ -24,6 +24,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readPin } from './pin.js';
 import { isNewer, isVersionLike } from './version.js';
 
 /** Stable Cordis plugin name. */
@@ -63,6 +64,7 @@ function resolveOptions(config) {
 		tag,
 		registry: registry.replace(/\/+$/, ''),
 		restart: raw.restart !== false,
+		versionFile: typeof raw.versionFile === 'string' && raw.versionFile.length > 0 ? raw.versionFile : null,
 		blocked
 	};
 }
@@ -116,11 +118,17 @@ async function fetchRegistryVersion(options) {
 	if (!response.ok) throw new Error(`registry responded ${response.status} ${response.statusText}`);
 	const packument = await response.json();
 	const distTags = packument !== null && typeof packument === 'object' && packument['dist-tags'] !== null && typeof packument['dist-tags'] === 'object' ? packument['dist-tags'] : {};
-	// An exact version in `tag` skips the tag table entirely.
-	if (isVersionLike(options.tag)) return { latest: options.tag, tag: options.tag, distTags, exact: true };
+	// An exact version in `tag` skips the tag table entirely. It is checked
+	// against the published list because the runner quits dsh before npm runs:
+	// a typo'd version would otherwise leave dsh stopped with nothing installed.
+	if (isVersionLike(options.tag)) {
+		const versions = packument?.versions;
+		const published = versions !== null && typeof versions === 'object' ? Object.hasOwn(versions, options.tag) : null;
+		return { latest: options.tag, tag: options.tag, distTags, exact: true, published };
+	}
 	const resolved = distTags[options.tag];
 	if (typeof resolved !== 'string') throw new Error(`registry advertises no dist-tag ${JSON.stringify(options.tag)}`);
-	return { latest: resolved, tag: options.tag, distTags, exact: false };
+	return { latest: resolved, tag: options.tag, distTags, exact: false, published: true };
 }
 
 /** The update command shown as the manual fallback in the UI. */
@@ -235,7 +243,7 @@ async function startUpdate({ options, version, parentPid, argv, quit }) {
 /**
  * Claim the updater routes on the web GUI's origin.
  * @param ctx - plugin context carrying the webServer and connection services.
- * @param config - optional `{ tag, registry, autoCheck, restart }`.
+ * @param config - optional `{ tag, registry, restart, versionFile, blocked }`.
  */
 function apply(ctx, config) {
 	const options = resolveOptions(config);
@@ -245,21 +253,37 @@ function apply(ctx, config) {
 		const now = Date.now();
 		if (!refresh && cached !== undefined && now - cached.at < CHECK_TTL_MS) return cached.value;
 		const current = await readInstalledVersion();
-		const registry = await fetchRegistryVersion(options);
+		const pin = await readPin(options.versionFile);
+		const pinned = pin?.version ?? null;
+		const pinError = pin?.error ?? null;
+		const registry = await fetchRegistryVersion(pinned === null ? options : { ...options, tag: pinned });
 		const blockedReason = blockedReasonFor(registry.latest, options.blocked);
-		const updateAvailable = current !== null && isNewer(registry.latest, current) && blockedReason === null;
+		// Pinned, the row converges on the pin in either direction: a machine that
+		// took a newer release than the checkout names is offered its way back,
+		// which is the same move `update` makes. Unpinned, it only goes forward.
+		const wanted = pinned === null
+			? isNewer(registry.latest, current ?? registry.latest)
+			: current !== pinned;
+		const updateAvailable = current !== null && pinError === null && wanted
+			&& blockedReason === null && registry.published !== false;
 		const value = {
 			current,
 			latest: registry.latest,
 			tag: registry.tag,
 			updateAvailable,
 			blockedReason,
+			pinned,
+			pinFile: pin?.path ?? null,
+			pinError,
+			published: registry.published,
 			exact: registry.exact,
 			distTags: registry.distTags,
 			registry: options.registry,
 			restart: options.restart,
 			checkedAt: new Date(now).toISOString(),
-			command: manualCommand(registry.latest),
+			// No copyable command while the pin is unreadable: the only version to
+			// hand would be the registry's, which is exactly what must not be offered.
+			command: pinError === null ? manualCommand(registry.latest) : undefined,
 			logPath: logPaths().logPath
 		};
 		cached = { at: now, value };
@@ -305,11 +329,23 @@ function apply(ctx, config) {
 			writeJson(response, 400, { error: `not a version: ${JSON.stringify(version)}` });
 			return;
 		}
-		// Checked here as well as in status: this refuses a version named
-		// directly in the request body, which never passed through the UI.
+		// Everything below is checked here as well as in status: a request body
+		// can name a version directly, without ever passing through the row.
+		if (current.pinError !== null) {
+			writeJson(response, 409, { error: `refusing to update: ${current.pinError}` });
+			return;
+		}
+		if (current.pinned !== null && version !== current.pinned) {
+			writeJson(response, 409, { error: `${version} is not the pinned version — ${current.pinFile} names ${current.pinned}`, version, pinned: current.pinned });
+			return;
+		}
 		const refusal = blockedReasonFor(version, options.blocked);
 		if (refusal !== null) {
 			writeJson(response, 409, { error: `${version} is blocked: ${refusal}`, version, blockedReason: refusal });
+			return;
+		}
+		if (version === current.latest && current.published === false) {
+			writeJson(response, 409, { error: `${version} is not published on ${options.registry}`, version });
 			return;
 		}
 		const quit = body.quit === true;
@@ -324,7 +360,11 @@ function apply(ctx, config) {
 			...started
 		});
 	});
-	if (typeof ctx.logger?.info === 'function') ctx.logger.info(`team-updater: updating ${PACKAGE_NAME} against ${options.registry} (tag ${options.tag})`);
+	if (typeof ctx.logger?.info === 'function') {
+		readPin(options.versionFile).then((pin) => ctx.logger.info(pin?.version
+			? `team-updater: following ${PACKAGE_NAME}@${pin.version} pinned by ${pin.path}`
+			: `team-updater: no pin found; following ${PACKAGE_NAME} tag ${options.tag} on ${options.registry}`));
+	}
 }
 
 export { apply, inject, name };

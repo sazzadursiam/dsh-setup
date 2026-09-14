@@ -11,7 +11,15 @@
     - id: team-updater
       name: dsh-team-updater
       config:
-        # npm dist-tag to follow: 'latest' | 'next' | 'alpha', or an exact version.
+        # The row installs the version dsh-setup's DSH_VERSION names, found in the
+        # checkout this plugin was added from — the same version setup and update
+        # install, so the two never pull a machine in opposite directions. Only
+        # when no DSH_VERSION can be found does it fall back to `tag` below.
+        # To point at a pin file elsewhere, set versionFile to its path:
+        # versionFile: /path/to/DSH_VERSION
+        #
+        # npm dist-tag to follow when unpinned: 'latest' | 'next' | 'alpha', or an
+        # exact version.
         tag: latest
         # Registry to query and install from.
         registry: https://registry.npmjs.org

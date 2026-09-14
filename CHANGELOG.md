@@ -19,6 +19,20 @@
   it reaches a machine through `git pull` and needs no registry. `setup` and
   `update` add it to the `web` profile once that profile exists.
 
+### Changed
+
+- **The update button installs the pinned dsh, not the registry's `latest`.**
+  It reads the same `DSH_VERSION` as `setup` and `update`, so the button and the
+  scripts can no longer pull a machine in opposite directions — before, a click
+  could install a new release that the next `update` run then moved back down.
+  A version now reaches the team when someone bumps `DSH_VERSION`, not the
+  moment npm publishes it. The row converges on the pin both ways, so a machine
+  that already took a newer release is offered the way back. A malformed pin, or
+  a pinned version that is not on the registry, stops the button offering
+  anything rather than falling back to `latest`, and `apply` refuses any version
+  but the pinned one. Profiles with no `DSH_VERSION` to find keep following
+  `tag` as before.
+
 ### Fixed
 
 - **Agent-rule stamp parsing across platforms.** `verify.bat` and `agents.bat`

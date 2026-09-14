@@ -6,7 +6,10 @@
  * Accept header), so the numbers the Settings row shows are known-good before
  * the plugin is ever installed.
  */
-import { readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { readPin } from '../lib/pin.js';
 import { isNewer, compareVersions } from '../lib/version.js';
 
 const PACKAGE_NAME = '@deepseek-ai/dsh';
@@ -28,6 +31,37 @@ check('rc.2 > rc.1', isNewer('0.1.2-rc.2', '0.1.2-rc.1'), true);
 check('rc.10 > rc.9', isNewer('0.1.2-rc.10', '0.1.2-rc.9'), true);
 check('alpha < rc', compareVersions('0.1.5-alpha.2', '0.1.5-rc.1'), -1);
 check('garbage is not newer', isNewer('not-a-version', '0.1.2-rc.1'), false);
+
+// ── finding the pin, in both layouts the plugin runs from ───────────────────
+// Built in a temp tree so the real checkout's DSH_VERSION never decides a result.
+const sandbox = await mkdtemp(join(tmpdir(), 'team-updater-pin-'));
+try {
+	const checkout = join(sandbox, 'dsh-setup');
+	const inCheckout = join(checkout, 'plugins', 'team-updater');
+	await mkdir(inCheckout, { recursive: true });
+	await writeFile(join(checkout, 'DSH_VERSION'), '0.1.2-rc.1\r\n');
+	check('checkout layout reads DSH_VERSION (CRLF tolerated)', (await readPin(null, inCheckout))?.version, '0.1.2-rc.1');
+
+	const profile = join(sandbox, 'profile');
+	const inProfile = join(profile, 'node_modules', 'dsh-team-updater');
+	await mkdir(inProfile, { recursive: true });
+	await writeFile(join(profile, 'package.json'), JSON.stringify({ dependencies: { 'dsh-team-updater': `file:${inCheckout}` } }));
+	check('profile copy follows an absolute file: spec', (await readPin(null, inProfile))?.version, '0.1.2-rc.1');
+	await writeFile(join(profile, 'package.json'), JSON.stringify({ dependencies: { 'dsh-team-updater': 'file:../dsh-setup/plugins/team-updater' } }));
+	check('profile copy follows a relative file: spec', (await readPin(null, inProfile))?.version, '0.1.2-rc.1');
+
+	await writeFile(join(checkout, 'DSH_VERSION'), '\n');
+	check('empty DSH_VERSION means unpinned', await readPin(null, inCheckout), null);
+	await writeFile(join(checkout, 'DSH_VERSION'), 'latest\n');
+	const junk = await readPin(null, inCheckout);
+	check('a non-version pin is an error, not a fallback', junk?.version === null && typeof junk?.error === 'string', true);
+	await rm(join(checkout, 'DSH_VERSION'));
+	check('no DSH_VERSION anywhere means unpinned', await readPin(null, inProfile), null);
+	const missing = await readPin(join(sandbox, 'nope', 'DSH_VERSION'), inProfile);
+	check('an explicit versionFile that is missing is an error', missing?.version === null && typeof missing?.error === 'string', true);
+} finally {
+	await rm(sandbox, { recursive: true, force: true });
+}
 
 // ── registry lookup, exactly as the host half does it ───────────────────────
 const url = `${REGISTRY}/${PACKAGE_NAME.replace('/', '%2f')}`;

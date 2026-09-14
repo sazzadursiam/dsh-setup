@@ -68,12 +68,15 @@ window.__ModuleLoader__.load({
 
 		/** A rounded "0.1.2-rc.1 → 0.1.5-rc.1" summary line. */
 		function versionLine(status) {
+			if (status?.pinError) return `update check stopped: ${status.pinError}`;
 			if (status?.current === null || status?.current === undefined) return `installed version unknown · registry ${status?.latest ?? '?'}`;
-			if (status.updateAvailable) return `${status.current} → ${status.latest} (${status.tag})`;
-			// Say why the newer version is being withheld, so the row does not
-			// look merely out of date next to a registry version it skips.
+			// Naming the source matters when pinned: without it the row reads as
+			// out of date next to a registry that has published something newer.
+			const source = status.pinned ? "pinned by dsh-setup" : `registry ${status.tag}`;
+			if (status.updateAvailable) return `${status.current} → ${status.latest}, ${source}`;
 			if (status.blockedReason) return `${status.current} · holding back ${status.latest}: ${status.blockedReason}`;
-			return `${status.current} · registry ${status.latest} (${status.tag})`;
+			if (status.published === false) return `${status.current} · ${status.latest} is ${source} but not published on the registry`;
+			return `${status.current} · up to date, ${source}`;
 		}
 
 		function UpdaterRow() {

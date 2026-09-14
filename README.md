@@ -151,7 +151,10 @@ To have it happen by itself at login:
 `check` covers this repo — the shared rules and the scripts. **dsh itself** has
 its own button: `setup` and `update` add the `plugins/team-updater` plugin to
 your dsh profile, which puts a "dsh updates" row under **Settings → General**
-that installs a newer dsh and restarts for you.
+that installs dsh and restarts for you. It installs the version in
+`DSH_VERSION` — the same one `setup` and `update` use — not whatever npm calls
+latest. So a new dsh reaches the team when someone bumps `DSH_VERSION` and the
+change is pulled, not the moment it is published.
 
 ## Something not working?
 

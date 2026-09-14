@@ -1,8 +1,8 @@
 # dsh-team-updater
 
 An update button **inside the dsh web GUI**. It puts one row in *Settings →
-General* that compares the running `@deepseek-ai/dsh` against the npm registry
-and, on click, installs the newer version and brings dsh back up.
+General* that compares the running `@deepseek-ai/dsh` against the version
+dsh-setup pins and, on click, installs that version and brings dsh back up.
 
 No fork, no patched frontend bundle, no hand-edited files inside the dsh
 installation: it is an ordinary out-of-tree profile plugin.
@@ -10,10 +10,41 @@ installation: it is an ordinary out-of-tree profile plugin.
 ```
 Settings → General
 ┌──────────────────────────────────────────────────────────────────────┐
-│ dsh updates                        0.1.2-rc.1 → 0.1.5-rc.1 (latest)  │
+│ dsh updates                 0.1.2-rc.1 → 0.1.6, pinned by dsh-setup  │
 │                                    [ Update & restart ] [ Check again]│
 └──────────────────────────────────────────────────────────────────────┘
 ```
+
+## Which version it installs
+
+The one named in `DSH_VERSION` at the root of the dsh-setup checkout — the same
+file `setup` and `update` install from. Not whatever the registry calls
+`latest`.
+
+That is deliberate. A button that follows the registry and a script that follows
+a pin will eventually disagree: a new release appears, someone clicks, and the
+next `update` run moves the machine back down. More importantly, a list of
+blocked versions can only exclude releases already known to be bad; a pin
+excludes every release nobody has looked at yet. dsh 0.1.5-rc.1 is why this
+matters — it could not resume any session written by an earlier dsh, and the
+registry offered it as `latest`.
+
+So the row converges on the pin in both directions. Pin bumped: it offers the
+new version. Machine already on something newer than the pin: it offers the way
+back, which is also what `update` would do. Installed equals pinned: it offers
+nothing.
+
+The profile holds a *copy* of this plugin, not a link, so the copy finds the
+checkout through the `file:` spec `setup` recorded in the profile's
+`package.json`. The file is read on every check, so a `git pull` that changes
+the pin reaches the row without reinstalling the plugin.
+
+It refuses rather than guesses: a `DSH_VERSION` holding something that is not a
+version, or a pinned version the registry has not published, stops the row from
+offering anything, since the runner quits dsh before npm runs and a failed
+install would leave dsh stopped. With no `DSH_VERSION` found at all — a profile
+added by hand from a copy outside any checkout — it falls back to following
+`tag`, as it did before pins existed.
 
 ## Install
 
@@ -70,30 +101,33 @@ plugin composes only `webServer` and `connection` and adds no policy of its own.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `tag` | `latest` | npm dist-tag to follow, or an exact version |
+| `versionFile` | found automatically | path to a pin file, overriding the checkout's `DSH_VERSION`; an unreadable one is an error |
+| `tag` | `latest` | npm dist-tag to follow, or an exact version — **only when no pin is found** |
 | `registry` | `https://registry.npmjs.org` | registry to query and install from |
 | `restart` | `true` | relaunch dsh after a successful install |
+| `blocked` | 0.1.5-rc.1, 0.1.5-rc.2 | `version: reason` pairs never installed, even if pinned — a backstop against a pin set by mistake |
 
 ## Verified
 
-- `node --check` on all four sources.
-- `node tests/check.mjs` — version ordering (release/prerelease, `rc.10 > rc.9`)
-  and the real registry lookup: `latest` resolves, and it *is* newer than the
-  installed `0.1.2-rc.1`.
-- `node lib/update-runner.mjs` with no arguments exits 2 without touching npm.
-- `dsh plugin --profile web add file:…` installed it, and
-  `dsh --profile web --dump-config` shows the row composed into the profile
-  tree as `id: team-updater, name: dsh-team-updater`.
+- `node tests/check.mjs` — version ordering, finding the pin in both the
+  checkout and the profile-copy layout (absolute and relative `file:` specs,
+  empty and malformed pins, a missing explicit `versionFile`), the shipped
+  blocked list, and the real registry lookup.
+- The row renders in Settings → General, and the routes answer 401 without the
+  browser session cookie and 200 with it.
+- A real quit and install on Windows: the polite `taskkill` is refused for a
+  windowless console process and the forced pass succeeds, as the log shows.
+- The host half, driven against the real registry with a stand-in dsh context:
+  installed equals pinned offers nothing; a bumped pin is offered exactly; an
+  unpublished, blocked or malformed pin offers nothing and `apply` answers 409;
+  a `version` in the request body other than the pin is refused; a machine
+  above the pin is offered the way back; and a click stages exactly the pinned
+  version for the runner.
 
-## Not verified yet (first GUI boot will tell)
+## Not verified yet
 
-- **Whether the row renders.** The bundle is hand-written in the module
-  loader's own format; a wrong module id or slot name shows up as a browser
-  console error, not a dsh failure.
-- **`ctx.connection.requestRejection` on a non-`/api` route.** If the browser
-  cookie is not accepted there, the row shows a 401/403; the fallback is a
-  loopback-socket check in `lib/index.js`.
-- **The whole handoff on a real quit**, including whether `taskkill` needs the
-  forced pass on this machine.
 - **Styling.** The row uses inline styles and inherited colors, not the GUI's
-  own primitives, so it may not match neighbouring rows exactly yet.
+  own primitives, so it may not match neighbouring rows exactly.
+- **The new row text in the GUI itself.** Only the status fields the wording is
+  built from were checked; the "pinned by dsh-setup" line has not been seen in a
+  rendered row.
