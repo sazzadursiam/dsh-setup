@@ -6,6 +6,7 @@
 #   ./agents.sh --role=none                  core rules only, no role block
 #   ./agents.sh --lang=Bengali               reply language (default: English)
 #   ./agents.sh --show                       print the target path and current settings
+#   ./agents.sh --no-ask                     never prompt: with no roles yet, core rules only
 #
 # dsh loads $DSH_HOME/AGENTS.md (default ~/.dsh/AGENTS.md) into every session of
 # every project, before any project's own AGENTS.md. So the shared rules live
@@ -74,13 +75,14 @@ done < "$INDEX"
 is_role() { local n="$1" s; for s in "${SLUGS[@]}"; do [ "$s" = "$n" ] && return 0; done; return 1; }
 
 # ---------- arguments ----------
-REQUESTED=""; HAVE_REQUEST=0; SHOW=0; LANG_ARG=""; HAVE_LANG=0
+REQUESTED=""; HAVE_REQUEST=0; SHOW=0; LANG_ARG=""; HAVE_LANG=0; NO_ASK=0
 for arg in "$@"; do
   case "$arg" in
     --role=*)  REQUESTED="${arg#--role=}"; HAVE_REQUEST=1 ;;
     --lang=*)  LANG_ARG="${arg#--lang=}"; HAVE_LANG=1 ;;
     --show)    SHOW=1 ;;
-    -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --no-ask)  NO_ASK=1 ;;
+    -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *)         die "Unknown argument: $arg   (try --help)" ;;
   esac
 done
@@ -121,10 +123,16 @@ if [ "$HAVE_REQUEST" -eq 0 ]; then
   if [ -f "$TARGET" ] && [ -n "$(head -n1 "$TARGET" | grep -F "$STAMP_PREFIX")" ]; then
     REQUESTED="$REMEMBERED"                      # regenerate as before
     info "Using the roles already set on this machine: ${REQUESTED:-none}"
+  elif [ "$NO_ASK" -eq 1 ]; then
+    # Roles are optional, and an update is not the moment to stop and ask.
+    REQUESTED=""
+    info "No roles set on this machine - writing the core rules only."
+    info "Add role blocks any time: ./agents.sh --role=$(IFS=,; echo "${SLUGS[*]}")"
   elif [ -t 0 ]; then
     say ""
-    say "  ${BOLD}Which kinds of work happen on this machine?${OFF}"
+    say "  ${BOLD}Which kinds of work happen on this machine?${OFF} ${DIM}(optional)${OFF}"
     say "  ${DIM}This picks which rule blocks get loaded. Nothing else changes.${OFF}"
+    say "  ${DIM}Change it any time with ./agents.sh --role=...${OFF}"
     say ""
     i=1
     for idx in "${!SLUGS[@]}"; do
@@ -132,7 +140,7 @@ if [ "$HAVE_REQUEST" -eq 0 ]; then
       i=$((i+1))
     done
     say ""
-    printf '  Numbers, separated by spaces (Enter for none): '
+    printf '  Numbers, separated by spaces - or Enter to skip: '
     read -r PICKED
     SEL=""
     for n in $PICKED; do

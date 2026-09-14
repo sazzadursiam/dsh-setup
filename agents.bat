@@ -8,6 +8,7 @@ REM   agents.bat --role=figma,visual-assets   set the roles for this machine
 REM   agents.bat --role=none                  core rules only, no role block
 REM   agents.bat --lang=Bengali               reply language (default: English)
 REM   agents.bat --show                       print the target path and current settings
+REM   agents.bat --no-ask                     never prompt: with no roles yet, core rules only
 REM
 REM dsh loads %DSH_HOME%\AGENTS.md (default %USERPROFILE%\.dsh\AGENTS.md) into
 REM every session of every project, before any project's own AGENTS.md. So the
@@ -77,6 +78,7 @@ set HAVE_REQUEST=0
 set "LANG_ARG="
 set HAVE_LANG=0
 set SHOW=0
+set NO_ASK=0
 set "ARGS=%*"
 
 REM Substring tests, not `echo !VAR! | findstr`: piping a variable that holds a
@@ -86,6 +88,7 @@ if defined ARGS (
     if not "!ARGS!"=="!ARGS:-h=!"     goto :help
 
     if not "!ARGS!"=="!ARGS:--show=!" set SHOW=1
+    if not "!ARGS!"=="!ARGS:--no-ask=!" set NO_ASK=1
 
     if not "!ARGS!"=="!ARGS:--role==!" (
         set HAVE_REQUEST=1
@@ -107,7 +110,7 @@ if defined ARGS (
         set "LANG_ARG=!LTAIL!"
     )
 
-    if "!SHOW!"=="0" if "!HAVE_REQUEST!"=="0" if "!HAVE_LANG!"=="0" (
+    if "!SHOW!"=="0" if "!HAVE_REQUEST!"=="0" if "!HAVE_LANG!"=="0" if "!NO_ASK!"=="0" (
         echo   [FAIL] Unknown argument: !ARGS!   ^(try --help^)
         exit /b 1
     )
@@ -215,15 +218,21 @@ if "%HAVE_REQUEST%"=="0" (
         ) else (
             echo   [INFO] Using the roles already set on this machine: !REQUESTED!
         )
+    ) else if "%NO_ASK%"=="1" (
+        REM Roles are optional, and an update is not the moment to stop and ask.
+        set "REQUESTED="
+        echo   [INFO] No roles set on this machine - writing the core rules only.
+        echo   [INFO] Add role blocks any time: agents.bat --role=%ALL%
     ) else (
         echo.
-        echo   Which kinds of work happen on this machine?
+        echo   Which kinds of work happen on this machine? ^(optional^)
         echo   This picks which rule blocks get loaded. Nothing else changes.
+        echo   Change it any time with: agents.bat --role=...
         echo.
         for /l %%i in (1,1,%N%) do echo     %%i^) !SLUG_%%i!  -  !DESC_%%i!
         echo.
         set "PICKED="
-        set /p "PICKED=  Numbers, separated by spaces (Enter for none): "
+        set /p "PICKED=  Numbers, separated by spaces - or Enter to skip: "
         set "SEL="
         for %%n in (!PICKED!) do (
             set "OK="
@@ -354,6 +363,7 @@ echo   agents.bat                              regenerate using the remembered r
 echo   agents.bat --role=figma,visual-assets   set the roles for this machine
 echo   agents.bat --role=none                  core rules only, no role block
 echo   agents.bat --show                       print the target path and current roles
+echo   agents.bat --no-ask                     never prompt: with no roles yet, core rules only
 echo.
 echo   Writes the shared agent rules to %%USERPROFILE%%\.dsh\AGENTS.md, which dsh
 echo   loads into every session of every project. Project-specific rules belong

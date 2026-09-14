@@ -21,6 +21,14 @@
 
 ### Changed
 
+- **`update` no longer stops to ask for roles.** Roles were already optional —
+  Enter meant "none" — but a machine with no rules file yet got the question in
+  the middle of an update, which read as something having gone wrong. `update`
+  now passes the new `agents --no-ask`: with no roles recorded it writes the
+  core rules and prints how to add role blocks later. `setup` still asks, now
+  marked optional, since first install is when choosing roles makes sense. This
+  also lets a scheduled `update.sh` (cron / LaunchAgent) run on such a machine;
+  before, with no terminal attached, `agents.sh` stopped there.
 - **The update button installs the pinned dsh, not the registry's `latest`.**
   It reads the same `DSH_VERSION` as `setup` and `update`, so the button and the
   scripts can no longer pull a machine in opposite directions — before, a click

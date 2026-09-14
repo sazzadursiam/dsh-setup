@@ -138,9 +138,10 @@ echo [3/3] Rewriting the shared agent rules...
 if not exist "%SCRIPT_DIR%\agents.bat" (
     echo   [WARN] agents.bat is missing from this checkout - skipping
 ) else (
-    REM agents.bat reuses the roles already recorded in the generated file, so
-    REM this is silent on every run after the first.
-    call "%SCRIPT_DIR%\agents.bat" !ROLE_ARG!
+    REM agents.bat reuses the roles recorded in the generated file. --no-ask
+    REM keeps it silent even with none recorded: roles are optional, so an
+    REM update writes the core rules and says how to add roles instead.
+    call "%SCRIPT_DIR%\agents.bat" --no-ask !ROLE_ARG!
     if errorlevel 1 echo   [WARN] Could not write the agent rules - see above
 )
 

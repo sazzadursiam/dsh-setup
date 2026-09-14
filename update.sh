@@ -119,12 +119,13 @@ say "${BOLD}[3/3]${OFF} Rewriting the shared agent rules..."
 if [ ! -x "$SCRIPT_DIR/agents.sh" ] && [ ! -f "$SCRIPT_DIR/agents.sh" ]; then
   warn "agents.sh is missing from this checkout - skipping"
 else
-  # agents.sh reuses the roles already recorded in the generated file, so this
-  # is silent on every run after the first.
+  # agents.sh reuses the roles recorded in the generated file. --no-ask keeps it
+  # silent even with none recorded: roles are optional, so an update writes the
+  # core rules and says how to add roles instead of stopping to ask.
   if [ -n "$ROLE_ARG" ]; then
-    bash "$SCRIPT_DIR/agents.sh" "$ROLE_ARG" || warn "Could not write the agent rules - see above"
+    bash "$SCRIPT_DIR/agents.sh" --no-ask "$ROLE_ARG" || warn "Could not write the agent rules - see above"
   else
-    bash "$SCRIPT_DIR/agents.sh" || warn "Could not write the agent rules - see above"
+    bash "$SCRIPT_DIR/agents.sh" --no-ask || warn "Could not write the agent rules - see above"
   fi
 fi
 
