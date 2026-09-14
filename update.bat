@@ -19,10 +19,12 @@ cd /d "%SCRIPT_DIR%" || goto :nodir
 REM Parsed from %* as one string: cmd.exe splits arguments on "=" as well as
 REM spaces, so "--role=figma" would not survive a shift-based loop.
 set SKIP_DSH=0
+set AFTER_PULL=0
 set "ROLE_ARG="
 set "ARGS=%*"
 if defined ARGS (
     if not "!ARGS!"=="!ARGS:--skip-dsh=!" set SKIP_DSH=1
+    if not "!ARGS!"=="!ARGS:--after-pull=!" set AFTER_PULL=1
     if not "!ARGS!"=="!ARGS:--role==!" (
         REM The search term cannot contain "=", so the match stops at "--role"
         REM and leaves the "=" on the front of what remains.
@@ -48,24 +50,34 @@ if errorlevel 1 goto :noclone
 for /f "delims=" %%h in ('git rev-parse HEAD 2^>nul') do set "OLD_HEAD=%%h"
 
 set "DIRTY="
-for /f "delims=" %%s in ('git status --porcelain 2^>nul') do set "DIRTY=1"
-if defined DIRTY (
-    echo   [WARN] You have local changes - not pulling, so nothing of yours is lost.
-    echo          Commit or stash them, then run this again:
-    echo            git stash ^&^& update.bat ^&^& git stash pop
+if "%AFTER_PULL%"=="1" (
+    echo   [ OK ] Pulled - now running the updated copy of this script
 ) else (
-    git pull --ff-only
-    if errorlevel 1 goto :pullfailed
-    for /f "delims=" %%h in ('git rev-parse HEAD 2^>nul') do set "NEW_HEAD=%%h"
-    if "!OLD_HEAD!"=="!NEW_HEAD!" (
-        echo   [ OK ] Already up to date
+    for /f "delims=" %%s in ('git status --porcelain 2^>nul') do set "DIRTY=1"
+    if defined DIRTY (
+        echo   [WARN] You have local changes - not pulling, so nothing of yours is lost.
+        echo          Commit or stash them, then run this again:
+        echo            git stash ^&^& update.bat ^&^& git stash pop
     ) else (
-        echo   [ OK ] Updated
-        echo.
-        echo   What changed:
-        for /f "delims=" %%l in ('git log --oneline --no-decorate !OLD_HEAD!..!NEW_HEAD! 2^>nul') do echo     %%l
-        echo.
-        echo          Full notes in CHANGELOG.md
+        git pull --ff-only
+        if errorlevel 1 goto :pullfailed
+        for /f "delims=" %%h in ('git rev-parse HEAD 2^>nul') do set "NEW_HEAD=%%h"
+        if "!OLD_HEAD!"=="!NEW_HEAD!" (
+            echo   [ OK ] Already up to date
+        ) else (
+            echo   [ OK ] Updated
+            echo.
+            echo   What changed:
+            for /f "delims=" %%l in ('git log --oneline --no-decorate !OLD_HEAD!..!NEW_HEAD! 2^>nul') do echo     %%l
+            echo.
+            echo          Full notes in CHANGELOG.md
+            REM The pull may have just rewritten this file, and cmd reads a batch
+            REM file from disk as it runs, so carrying on would resume the new
+            REM file at this one's byte offset. This block is already parsed, so
+            REM hand over to the new copy from here and never read this file again.
+            call "%~f0" --after-pull %*
+            exit /b !errorlevel!
+        )
     )
 )
 echo.

@@ -23,10 +23,12 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR" || die "Cannot enter $SCRIPT_DIR"
 
 SKIP_DSH=0
+AFTER_PULL=0
 ROLE_ARG=""
 for arg in "$@"; do
   case "$arg" in
     --skip-dsh) SKIP_DSH=1 ;;
+    --after-pull) AFTER_PULL=1 ;;
     --role=*)   ROLE_ARG="$arg" ;;
     -h|--help)  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *)          die "Unknown argument: $arg   (try --help)" ;;
@@ -46,7 +48,9 @@ git rev-parse --git-dir >/dev/null 2>&1 || die "$SCRIPT_DIR is not a git clone. 
 
 OLD_HEAD="$(git rev-parse HEAD 2>/dev/null)"
 
-if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+if [ "$AFTER_PULL" = 1 ]; then
+  ok "Pulled - now running the updated copy of this script"
+elif [ -n "$(git status --porcelain 2>/dev/null)" ]; then
   warn "You have local changes - not pulling, so nothing of yours is lost."
   hint "Commit or stash them, then run this again:"
   hint "  git stash && ./update.sh && git stash pop"
@@ -62,6 +66,10 @@ else
     git log --oneline --no-decorate "$OLD_HEAD..$NEW_HEAD" | sed 's/^/    /'
     say ""
     hint "Full notes in CHANGELOG.md"
+    # The rest of this run should be the script that was just pulled, not the
+    # one already in memory. Kept inside this if-block, which bash has parsed
+    # whole, so nothing is read from the rewritten file before the handover.
+    exec bash "$SCRIPT_DIR/update.sh" --after-pull "$@"
   fi
 fi
 say ""
