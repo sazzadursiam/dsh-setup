@@ -35,6 +35,18 @@
 
 ### Fixed
 
+- **`update.bat` could derail when its own pull changed it.** cmd.exe reads a
+  batch file from disk as it runs, so after `git pull` rewrote `update.bat` the
+  rest of the run continued in the *new* file at the *old* file's byte offset —
+  landing mid-line, re-running earlier steps, or skipping later ones such as
+  adding the update button. Reproduced by pulling a change that shifts the file:
+  `'every' is not recognized`, then the script restarting from the top. Both
+  `update.bat` and `update.sh` now hand over to the freshly pulled copy as soon
+  as the pull brings anything new, so the rest of the run is always the new
+  script, read from the start. (bash does not corrupt the same way — it keeps
+  reading the old file — but it did finish with the old logic, so a new step
+  only took effect on the second run.) This protects updates from this version
+  on; a machine still on an older `update.bat` should simply run it twice.
 - **Agent-rule stamp parsing across platforms.** `verify.bat` and `agents.bat`
   read line 1 with `set /p`, which ends a line on CR and so swallowed a whole
   file written by `agents.sh` (LF only) — the version came out as garbage and
