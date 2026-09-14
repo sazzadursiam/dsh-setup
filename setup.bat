@@ -94,11 +94,20 @@ REM lockfile keys and fails with "Mismatch parenthesis" - so say so up front.
 set "UPDATER_BRACKETS="
 if not "%UPDATER_SPEC:(=%"=="%UPDATER_SPEC%" set "UPDATER_BRACKETS=1"
 if not "%UPDATER_SPEC:)=%"=="%UPDATER_SPEC%" set "UPDATER_BRACKETS=1"
+REM `dsh plugin` runs whatever pnpm is on PATH and does not ship one, so a
+REM machine with only Node and npm fails with "'pnpm' is not recognized".
+REM Major 12 is what this was tested with; its install script swaps in the
+REM native binary, which npm 11 only runs when allowed.
 if defined UPDATER_BRACKETS (
     echo   [WARN] Skipped: pnpm cannot install a plugin from a folder whose path
     echo          contains a bracket. Move this checkout to a path without ^( or ^)
     echo          and run this again.
 ) else if exist "%DSH_PROFILE_DIR%\profiles\web" (
+    where pnpm >nul 2>&1
+    if errorlevel 1 (
+        echo          pnpm not found - installing it, dsh plugins need it...
+        call npm install -g --allow-scripts=pnpm pnpm@12
+    )
     call dsh plugin --profile web add %UPDATER_ARG% > "%UPDATER_LOG%" 2>&1
     if errorlevel 1 (
         echo   [WARN] Could not add it. pnpm said:

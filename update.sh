@@ -112,13 +112,22 @@ case "$SCRIPT_DIR" in
   *)
     if [ ! -d "${DSH_HOME:-$HOME/.dsh}/profiles/web" ]; then
       warn "No web profile yet - run 'dsh web' once, then re-run this script"
-    elif dsh plugin --profile web add "file:$SCRIPT_DIR/plugins/team-updater" >"$UPDATER_LOG" 2>&1; then
-      ok "Update button present - Settings > General"
     else
-      warn "Could not add it. pnpm said:"
-      sed 's/^/         /' "$UPDATER_LOG"
-      hint "Run this by hand once the cause is fixed:"
-      hint "dsh plugin --profile web add \"file:$SCRIPT_DIR/plugins/team-updater\""
+      # `dsh plugin` runs whatever pnpm is on PATH and does not ship one. Major
+      # 12 is what this was tested with; its install script swaps in the native
+      # binary, which npm 11 only runs when allowed.
+      if ! command -v pnpm >/dev/null 2>&1; then
+        info "pnpm not found - installing it, dsh plugins need it..."
+        npm install -g --allow-scripts=pnpm pnpm@12 || warn "pnpm install failed - see the npm output above"
+      fi
+      if dsh plugin --profile web add "file:$SCRIPT_DIR/plugins/team-updater" >"$UPDATER_LOG" 2>&1; then
+        ok "Update button present - Settings > General"
+      else
+        warn "Could not add it. pnpm said:"
+        sed 's/^/         /' "$UPDATER_LOG"
+        hint "Run this by hand once the cause is fixed:"
+        hint "dsh plugin --profile web add \"file:$SCRIPT_DIR/plugins/team-updater\""
+      fi
     fi ;;
 esac
 say ""

@@ -43,6 +43,12 @@
 
 ### Fixed
 
+- **The update button was never added on a machine without pnpm.** `dsh plugin`
+  runs whatever `pnpm` is on PATH and does not ship one, so a machine set up with
+  only Node and npm got `'pnpm' is not recognized` on every `update`. `setup`
+  and `update` now install `pnpm@12` first when it is missing, with its install
+  script allowed so the native binary is used. Tested with a PATH holding only
+  Node and dsh.
 - **The checkout can live on any drive, and in a path with spaces.** Tested from
   a separate drive letter with the dsh profile on `C:`. Three things broke along
   the way:
