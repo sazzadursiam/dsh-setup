@@ -113,8 +113,10 @@ plugin composes only `webServer` and `connection` and adds no policy of its own.
   checkout and the profile-copy layout (absolute and relative `file:` specs,
   empty and malformed pins, a missing explicit `versionFile`), the shipped
   blocked list, and the real registry lookup.
-- The row renders in Settings → General, and the routes answer 401 without the
-  browser session cookie and 200 with it.
+- The row renders in Settings → General — pinned, it reads
+  "0.1.2-rc.1 · up to date, pinned by dsh-setup" with only *Check for updates*
+  offered — and the routes answer 401 without the browser session cookie and
+  200 with it.
 - A real quit and install on Windows: the polite `taskkill` is refused for a
   windowless console process and the forced pass succeeds, as the log shows.
 - The host half, driven against the real registry with a stand-in dsh context:
@@ -128,6 +130,6 @@ plugin composes only `webServer` and `connection` and adds no policy of its own.
 
 - **Styling.** The row uses inline styles and inherited colors, not the GUI's
   own primitives, so it may not match neighbouring rows exactly.
-- **The new row text in the GUI itself.** Only the status fields the wording is
-  built from were checked; the "pinned by dsh-setup" line has not been seen in a
-  rendered row.
+- **A click on a real pin bump.** Offering and staging the pinned version were
+  checked through the host half; a full quit → install → relaunch to a newly
+  pinned version has not been run, since no newer usable dsh exists yet.
