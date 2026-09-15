@@ -120,7 +120,7 @@ fi
 # ---------- decide the roles ----------
 if [ "$HAVE_REQUEST" -eq 0 ]; then
   REMEMBERED="$(roles_of "$TARGET")"
-  if [ -f "$TARGET" ] && [ -n "$(head -n1 "$TARGET" | grep -F "$STAMP_PREFIX")" ]; then
+  if [ -f "$TARGET" ] && head -n1 "$TARGET" | grep -qF "$STAMP_PREFIX"; then
     REQUESTED="$REMEMBERED"                      # regenerate as before
     info "Using the roles already set on this machine: ${REQUESTED:-none}"
   elif [ "$NO_ASK" -eq 1 ]; then

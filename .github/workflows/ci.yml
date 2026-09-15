@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# A push to master while an older run for the same branch is still going gets
+# the older one cancelled - only the latest commit's result matters here.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (shellcheck + line endings)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: shellcheck
+        run: git ls-files '*.sh' | xargs shellcheck
+
+      - name: .bat/.cmd files must be checked out as CRLF
+        # cmd.exe's batch parser assumes CRLF - an LF-only .bat can misparse
+        # labels, goto targets and multi-line if () blocks (see .gitattributes).
+        # `git ls-files --eol` reports how each tracked file is actually
+        # materialized in the working tree, which is what cmd.exe would read.
+        run: |
+          bad=$(git ls-files --eol -- '*.bat' '*.cmd' | grep -v 'w/crlf' || true)
+          if [ -n "$bad" ]; then
+            printf 'Not checked out as CRLF:\n%s\n' "$bad"
+            exit 1
+          fi
+
+  smoke:
+    name: Smoke test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: agents.sh / verify.sh
+        run: ./tests/smoke.sh
+
+      - name: plugins/team-updater unit tests
+        run: node plugins/team-updater/tests/check.mjs
+
+  smoke-windows:
+    name: Smoke test (windows-latest)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: agents.bat / verify.bat
+        shell: cmd
+        run: tests\smoke.bat
+
+      - name: plugins/team-updater unit tests
+        run: node plugins/team-updater/tests/check.mjs

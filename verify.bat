@@ -171,4 +171,8 @@ if "%FAIL%"=="1" (
 )
 echo ============================================
 echo.
-pause
+REM CI sets this automatically (GitHub Actions among others); a script running
+REM there has no one to press a key, and this line previously always returned 0
+REM regardless of %FAIL% - pause doesn't touch it, but nothing after it did either.
+if not defined CI pause
+exit /b %FAIL%

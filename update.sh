@@ -98,8 +98,11 @@ else
     say "       Installing ${DSH_PIN:-latest}. This takes a few minutes."
     # Not `npm update -g`: that does not re-apply the allowlist, leaving the
     # native modules unbuilt. See SETUP.md, Part 9.
-    npm install -g --allow-scripts="$DSH_ALLOW" "$DSH_SPEC" \
-      && ok "dsh updated" || warn "dsh update failed - see the npm output above"
+    if npm install -g --allow-scripts="$DSH_ALLOW" "$DSH_SPEC"; then
+      ok "dsh updated"
+    else
+      warn "dsh update failed - see the npm output above"
+    fi
   fi
 fi
 say ""
