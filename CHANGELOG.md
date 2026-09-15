@@ -59,6 +59,15 @@
 
 ### Fixed
 
+- **`agents.sh`, `check.sh`, `setup.sh`, `update.sh` and `verify.sh` were not
+  executable in the repository.** Only `setup.sh` was worked around, by the
+  `chmod +x setup.sh` the README had you run before it; the other four are
+  documented to run the same way (`./update.sh`, `./verify.sh`, ...) with no
+  such step, so a real fresh clone on macOS or Linux hit `Permission denied`
+  on every one of them. Never noticed locally because nothing here had
+  actually run those scripts from a truly fresh clone until CI (added this
+  release) did. All five now carry the executable bit; the now-unneeded
+  `chmod +x setup.sh` line is gone from the README.
 - **The update button was never added on a machine without pnpm.** `dsh plugin`
   runs whatever `pnpm` is on PATH and does not ship one, so a machine set up with
   only Node and npm got `'pnpm' is not recognized` on every `update`. `setup`

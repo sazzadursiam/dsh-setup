@@ -29,7 +29,6 @@ setup.bat
 ```bash
 git clone https://github.com/sazzadursiam/dsh-setup.git
 cd dsh-setup
-chmod +x setup.sh
 ./setup.sh
 ```
 
