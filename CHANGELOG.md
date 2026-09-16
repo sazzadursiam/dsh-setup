@@ -18,17 +18,23 @@
   Settings → General) now lives in this repo instead of a folder outside it, so
   it reaches a machine through `git pull` and needs no registry. `setup` and
   `update` add it to the `web` profile once that profile exists.
+- **`plugins/figma-bridge/`** — the Figma MCP server config now lives in this
+  repo as a proper dsh plugin instead of a hand-copied `cordis.patch.yml`.
+  `setup` and `update` install it with `dsh plugin --profile web add`, the same
+  way they already install `plugins/team-updater/`. Root `cordis.patch.yml` and
+  `scripts/figma-pin.mjs` are removed; `update` migrates an existing
+  hand-copied profile entry automatically before adding the plugin.
 
 ### Changed
 
 - **The Figma MCP server is pinned to 1.40.0 instead of `@latest`.** With
   `@latest`, every dsh start ran whatever had been published last, on every
   machine at once — the same exposure that pinning dsh removed. `update` now
-  carries the version in `cordis.patch.yml` into the profile's copy, rewriting
-  only the `figma-console-mcp@…` entry and leaving the rest of that hand-edited
-  file alone; `verify` reports a profile that differs. An existing profile on
-  `@latest` moves to 1.40.0 on its next `update` — the version `@latest`
-  resolved to at the time, so nothing changes in practice.
+  carries a version bump into an already-installed profile's copy of
+  `plugins/figma-bridge` (`plugins/figma-bridge/lib/pin.js`, rewriting only the
+  `figma-console-mcp@…` entry); `verify` reports a profile that differs. An
+  existing profile on `@latest` moves to 1.40.0 on its next `update` — the
+  version `@latest` resolved to at the time, so nothing changes in practice.
 - **The `--allow-scripts` list has one source, `DSH_ALLOW_SCRIPTS`.** It was
   written out in six places — four scripts, the update button and its runner —
   so a dsh release adding a native dependency meant six edits, and a missed one

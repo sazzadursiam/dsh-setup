@@ -72,6 +72,31 @@ if "!VERIFY_EXIT!"=="1" (call :pass "exits 1") else (call :fail "exited !VERIFY_
 findstr /c:"[FAIL]" "%OUT%" >nul 2>&1
 if errorlevel 1 (call :fail "no FAIL line printed") else (call :pass "prints at least one FAIL")
 
+echo.
+echo plugins\figma-bridge\lib\migrate.js removes a hand-copied legacy entry
+set "PROFILE_CFG=%DSH_HOME%\profiles\web\cordis.patch.yml"
+mkdir "%DSH_HOME%\profiles\web" 2>nul
+(
+echo # Your patch layer for this dsh profile, applied after every bundle layer:
+echo - insert:
+echo     - id: mcp-figma
+echo       name: '@deepseek-ai/dsh-mcp-client'
+echo       config:
+echo         serverName: figma
+echo         transport: stdio
+echo         command: npx
+echo         args: ['-y', 'figma-console-mcp@latest']
+) > "%PROFILE_CFG%"
+node plugins\figma-bridge\lib\migrate.js >"%OUT%" 2>&1
+if errorlevel 1 (call :fail "exited non-zero" & type "%OUT%") else (call :pass "exits 0")
+findstr /c:"serverName: figma" "%PROFILE_CFG%" >nul 2>&1
+if errorlevel 1 (call :pass "legacy entry removed") else (call :fail "legacy entry still present")
+if exist "%PROFILE_CFG%.bak" (call :pass "backup written") else (call :fail "no .bak written")
+node plugins\figma-bridge\lib\migrate.js >"%OUT%" 2>&1
+if errorlevel 1 (call :fail "second run exited non-zero" & type "%OUT%") else (call :pass "second run exits 0")
+findstr /c:"no legacy entry found" "%OUT%" >nul 2>&1
+if errorlevel 1 (call :fail "second run did not report a no-op" & type "%OUT%") else (call :pass "second run is a clean no-op")
+
 rd /s /q "%SANDBOX%" 2>nul
 echo.
 if "%FAILED%"=="1" (echo some smoke checks failed) else (echo all smoke checks passed)

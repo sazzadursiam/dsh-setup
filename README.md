@@ -43,8 +43,8 @@ route:
 **Where to put it.** Any folder, on any drive — it does not need to sit next to
 your projects, and your projects can live on other drives, since nothing here
 reads or writes project folders. Spaces in the path are fine. One limit: keep
-`(` and `)` out of the checkout's path. pnpm cannot install the update-button
-plugin from such a folder, so `setup` and `update` skip that one step and say so.
+`(` and `)` out of the checkout's path. pnpm cannot install the dsh plugins
+from such a folder, so `setup` and `update` skip that step and say so.
 
 The script installs Node.js, Git and dsh. It prints the remaining manual steps when it finishes.
 
@@ -53,9 +53,8 @@ On Windows, if the script installs Node or Git, it stops and asks you to reopen 
 ## Manual steps
 
 1. **Set your Figma token** as an environment variable (see `.env.example`)
-2. **Copy the MCP config:** `cordis.patch.yml` → your dsh profile
-3. **Run `dsh web`**, then add your Anthropic API key under Settings → Models
-4. **Import the bridge plugin** into Figma Desktop
+2. **Run `dsh web`**, then add your Anthropic API key under Settings → Models
+3. **Import the bridge plugin** into Figma Desktop
 
 Full detail in `SETUP.md`.
 
@@ -110,8 +109,8 @@ file: the global file is per-machine and does not travel with a clone.
 ## Updating
 
 One command pulls this repo, updates dsh with the right `--allow-scripts`
-allowlist, moves your Figma MCP to the version in `cordis.patch.yml`, and
-rewrites your agent rules:
+allowlist, moves your Figma MCP to the version pinned in
+`plugins/figma-bridge/cordis.patch.yml`, and rewrites your agent rules:
 
 ```
 update.bat          # Windows
@@ -162,6 +161,11 @@ that installs dsh and restarts for you. It installs the version in
 latest. So a new dsh reaches the team when someone bumps `DSH_VERSION` and the
 change is pulled, not the moment it is published.
 
+**The Figma MCP server** is installed the same way, as `plugins/figma-bridge`
+— `setup` and `update` add it with `dsh plugin --profile web add`, so there is
+nothing to hand-copy. A version bump in this repo reaches an already-installed
+profile the next time `update` runs.
+
 ## Something not working?
 
 Run the verifier before digging through docs — it tells you which piece is missing:
@@ -202,8 +206,8 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 | `enable-autoupdate.bat`       | Add the login-time update check (Windows)                  |
 | `agents.bat` / `agents.sh`    | Write the shared agent rules to `~/.dsh/AGENTS.md`         |
 | `verify.bat` / `verify.sh`    | Check what is set up and what is missing                   |
-| `cordis.patch.yml`            | MCP server config — copy into your dsh profile             |
 | `plugins/team-updater/`       | The in-app update button — added to your dsh profile by setup |
+| `plugins/figma-bridge/`       | Figma MCP server config — added to your dsh profile by setup, like `plugins/team-updater/` |
 | `templates/core.md`           | The shared rules, applied on every project                 |
 | `templates/roles/`            | Optional rule blocks — Figma, design-to-code, visual assets |
 | `templates/project.example.md`| Starting point for a project's own `AGENTS.md`             |
@@ -212,7 +216,6 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 | `VERSION`                     | What version this checkout is                              |
 | `DSH_VERSION`                 | Which dsh version setup and update install — pinned, not `latest` |
 | `DSH_ALLOW_SCRIPTS`           | Which packages npm may run install scripts for when installing that dsh |
-| `scripts/figma-pin.mjs`       | Keeps your profile's Figma MCP version in step with `cordis.patch.yml` |
 | `CHANGELOG.md`                | What changed and why                                       |
 | `LICENSE`                     | MIT                                                        |
 

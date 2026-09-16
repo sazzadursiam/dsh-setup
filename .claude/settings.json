@@ -1,7 +1,44 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/Users/AC/Projects/dsh-routing/**)"
+      "Read(//c/Users/AC/Projects/dsh-routing/**)",
+      "Bash(command -v dsh)",
+      "Bash(dsh --version)",
+      "Bash(sed -n '1,116p' /c/Users/AC/Projects/dsh-setup/setup.bat)",
+      "Bash(cat)",
+      "Read(//c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/real_repo_test/**)",
+      "Bash(sed -n '1,125p' /c/Users/AC/Projects/dsh-setup/setup.bat)",
+      "Bash(sed -n '1,129p' /c/Users/AC/Projects/dsh-setup/setup.bat)",
+      "Bash(cp /c/Users/AC/Projects/dsh-setup/setup.bat /c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/real_repo_test/setup.bat)",
+      "Bash(echo \"console.log\\('migrate stub'\\)\")",
+      "Bash(SCRATCH=\"/c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad\" *)",
+      "Bash(rm -rf /c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/fake_userprofile)",
+      "Bash(mkdir -p /c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/fake_userprofile)",
+      "Bash(cp -r /c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/e2e_sandbox /c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/fake_userprofile/.dsh)",
+      "Bash(echo \"0.1.2-rc.1\")",
+      "Read(//c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/fake_userprofile/.dsh/profiles/**)",
+      "Bash(rm -rf /c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/fake_userprofile_legacy)",
+      "Bash(mkdir -p /c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/fake_userprofile_legacy/.dsh/profiles/web)",
+      "Bash(echo '{\"dependencies\":{}}')",
+      "Read(//c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/**)",
+      "Bash(HOME=\"/c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/fake_userprofile\" bash verify.sh)",
+      "Bash(HOME=\"/c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/fake_userprofile_legacy\" bash verify.sh)",
+      "Bash(HOME=\"/c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/fake_userprofile_none\" bash verify.sh)",
+      "Bash(HOME=\"/c/Users/AC/AppData/Local/Temp/claude/c--Users-AC-Projects-dsh-setup/eecc254e-39ef-4ccb-a3c3-b4b23fa40321/scratchpad/fake_userprofile_missing\" bash verify.sh)",
+      "Bash(grep -n \"figma-pin.mjs\\\\|cp cordis.patch.yml\\\\|copy cordis.patch.yml\\\\|Copy the MCP\\\\|scripts/figma-pin\\\\|scripts\\\\\\\\\\\\\\\\figma-pin\" SETUP.md)",
+      "Bash(grep -rn \"figma-pin\\\\.mjs\\\\|scripts/figma-pin\\\\|scripts\\\\\\\\\\\\\\\\figma-pin\" --include=\"*.md\" --include=\"*.sh\" --include=\"*.bat\" --include=\"*.mjs\" .)",
+      "Bash(git rm *)",
+      "Bash(node plugins/figma-bridge/tests/check.mjs)",
+      "Bash(node plugins/team-updater/tests/check.mjs)",
+      "Bash(bash tests/smoke.sh)",
+      "PowerShell(cmd /c \"`\"C:\\\\Users\\\\AC\\\\Projects\\\\dsh-setup\\\\tests\\\\smoke.bat`\"\")",
+      "Bash(command -v shellcheck)",
+      "Bash(shellcheck /c/Users/AC/Projects/dsh-setup/setup.sh /c/Users/AC/Projects/dsh-setup/update.sh /c/Users/AC/Projects/dsh-setup/verify.sh /c/Users/AC/Projects/dsh-setup/tests/smoke.sh)",
+      "Bash(echo \"exit: $?\")",
+      "PowerShell(cmd /c \"`\"C:\\\\Users\\\\AC\\\\Projects\\\\dsh-setup\\\\tests\\\\smoke.bat`\"\" 2>&1)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\AC\\AppData\\Local\\Temp\\claude\\c--Users-AC-Projects-dsh-setup\\eecc254e-39ef-4ccb-a3c3-b4b23fa40321\\scratchpad\\real_repo_test"
     ]
   }
 }

@@ -90,10 +90,6 @@ if (allowFile === null) {
 	check('SETUP.md has dsh install commands', dshCommands.length > 0, true);
 	check('every SETUP.md install command uses DSH_ALLOW_SCRIPTS', dshCommands.every((m) => m[1] === ALLOW_SCRIPTS), true);
 	check('every SETUP.md install command uses DSH_VERSION', dshCommands.every((m) => m[2] === `@${pin}`), true);
-	const figmaPin = (text) => [...text.matchAll(/["']figma-console-mcp(?:@([^"'\s]+))?["']/g)].map((m) => m[1] ?? 'latest');
-	const figmaInConfig = figmaPin(await repoFile('cordis.patch.yml'));
-	check('cordis.patch.yml pins an exact figma-console-mcp', /^\d+\.\d+\.\d+/.test(figmaInConfig[0] ?? ''), true);
-	check('SETUP.md shows the same figma-console-mcp version', figmaPin(setupDoc).every((v) => v === figmaInConfig[0]), true);
 }
 
 // ── registry lookup, exactly as the host half does it ───────────────────────

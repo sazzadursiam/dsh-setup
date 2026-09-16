@@ -66,6 +66,26 @@ code=$?
 if [ "$code" -eq 1 ]; then pass "exits 1"; else fail "exited $code, expected 1: $(cat "$OUT")"; fi
 if out_has FAIL; then pass "prints at least one FAIL"; else fail "no FAIL line printed"; fi
 
+step "plugins/figma-bridge/lib/migrate.js removes a hand-copied legacy entry"
+PROFILE_CFG="$DSH_HOME/profiles/web/cordis.patch.yml"
+mkdir -p "$DSH_HOME/profiles/web"
+cat > "$PROFILE_CFG" <<'EOF'
+# Your patch layer for this dsh profile, applied after every bundle layer:
+- insert:
+    - id: mcp-figma
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: figma
+        transport: stdio
+        command: npx
+        args: ['-y', 'figma-console-mcp@latest']
+EOF
+if node plugins/figma-bridge/lib/migrate.js >"$OUT" 2>&1; then pass "exits 0"; else fail "exited non-zero: $(cat "$OUT")"; fi
+if grep -q "serverName: figma" "$PROFILE_CFG"; then fail "legacy entry still present"; else pass "legacy entry removed"; fi
+if [ -f "$PROFILE_CFG.bak" ]; then pass "backup written"; else fail "no .bak written"; fi
+if node plugins/figma-bridge/lib/migrate.js >"$OUT" 2>&1; then pass "second run exits 0"; else fail "second run exited non-zero: $(cat "$OUT")"; fi
+if out_has "no legacy entry found"; then pass "second run is a clean no-op"; else fail "second run did not report a no-op: $(cat "$OUT")"; fi
+
 echo ""
 if [ "$FAILED" -eq 0 ]; then
   printf '%sall smoke checks passed%s\n' "$GREEN" "$OFF"

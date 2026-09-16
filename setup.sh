@@ -115,12 +115,12 @@ ok "dsh installed"
 
 say ""
 
-# ---------- in-GUI update button ----------
+# ---------- dsh plugins (update button, Figma MCP) ----------
 # The profile only exists once dsh has been started at least once, so on a fresh
-# machine this is a hint rather than a step. `dsh plugin ... add` appends the
-# bundle by itself, because the package declares dsh.bundle.patch.
-say "${BOLD}[+]${OFF} Adding the in-app update button..."
-UPDATER_LOG="${TMPDIR:-/tmp}/dsh-setup-plugin-add.log"
+# machine this is a hint rather than a step. `dsh plugin ... add` appends each
+# bundle by itself, because the packages declare dsh.bundle.patch.
+say "${BOLD}[+]${OFF} Adding dsh plugins (update button, Figma MCP)..."
+PLUGIN_LOG="${TMPDIR:-/tmp}/dsh-setup-plugin-add.log"
 case "$SCRIPT_DIR" in
   # pnpm uses brackets in lockfile keys and fails with "Mismatch parenthesis".
   *'('*|*')'*)
@@ -137,14 +137,19 @@ case "$SCRIPT_DIR" in
         say "        pnpm not found - installing it, dsh plugins need it..."
         npm install -g --allow-scripts=pnpm pnpm@12 || warn "pnpm install failed - see the npm output above"
       fi
-      if dsh plugin --profile web add "file:$SCRIPT_DIR/plugins/team-updater" >"$UPDATER_LOG" 2>&1; then
-        ok "Update button added - Settings > General, after a restart"
-      else
-        warn "Could not add it. pnpm said:"
-        sed 's/^/        /' "$UPDATER_LOG"
-        say  "        Run this by hand once the cause is fixed:"
-        say  "        dsh plugin --profile web add \"file:$SCRIPT_DIR/plugins/team-updater\""
-      fi
+      # A hand-copied profile from before figma-bridge existed would otherwise
+      # end up with two "serverName: figma" rows once the plugin is added.
+      command -v node >/dev/null 2>&1 && node "$SCRIPT_DIR/plugins/figma-bridge/lib/migrate.js"
+      for plugin in team-updater figma-bridge; do
+        if dsh plugin --profile web add "file:$SCRIPT_DIR/plugins/$plugin" >"$PLUGIN_LOG" 2>&1; then
+          ok "$plugin added"
+        else
+          warn "Could not add $plugin. pnpm said:"
+          sed 's/^/        /' "$PLUGIN_LOG"
+          say  "        Run this by hand once the cause is fixed:"
+          say  "        dsh plugin --profile web add \"file:$SCRIPT_DIR/plugins/$plugin\""
+        fi
+      done
     fi ;;
 esac
 
@@ -174,26 +179,21 @@ say "       ${BOLD}export FIGMA_ACCESS_TOKEN=\"figd_your_token\"${OFF}"
 say "       ${BOLD}export ENABLE_MCP_APPS=true${OFF}"
 say "     Add both to ~/.zshrc or ~/.bashrc so they persist."
 say ""
-say "  2. Copy the MCP config into your dsh profile:"
-say "       ${BOLD}mkdir -p ~/.dsh/profiles/web${OFF}"
-say "       ${BOLD}cp cordis.patch.yml ~/.dsh/profiles/web/${OFF}"
-say "     ${DIM}If that file already has entries, merge by hand instead.${OFF}"
-say ""
-say "  3. Run:  ${BOLD}dsh web${OFF}"
+say "  2. Run:  ${BOLD}dsh web${OFF}"
 say "     Open: http://127.0.0.1:3080"
 say "     Settings → Models → add your Anthropic API key"
 say "     ${DIM}console.anthropic.com${OFF}"
 say ""
 if [ "$OS" = "mac" ]; then
-  say "  4. Open Figma Desktop, press ${BOLD}Cmd+/${OFF} , type: import"
+  say "  3. Open Figma Desktop, press ${BOLD}Cmd+/${OFF} , type: import"
   say "     Choose \"Import plugin from manifest…\""
   say "     File: ~/.figma-console-mcp/plugin/manifest.json"
   say "     ${DIM}(Folder appears only AFTER dsh has started the MCP server once.)${OFF}"
   say ""
-  say "  5. Run the \"Figma Desktop Bridge\" plugin in your Figma file."
+  say "  4. Run the \"Figma Desktop Bridge\" plugin in your Figma file."
   say "     Wait for the green \"Connected\" status."
 else
-  say "  4. ${YEL}Figma write access is not available on Linux.${OFF}"
+  say "  3. ${YEL}Figma write access is not available on Linux.${OFF}"
   say "     Read-only Figma tools still work via your PAT."
   say "     For design creation, use a Windows or Mac machine."
 fi

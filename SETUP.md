@@ -179,14 +179,15 @@ echo $FIGMA_ACCESS_TOKEN
 
 `dsh web` → `http://127.0.0.1:3080` → Settings → Models → add the Anthropic key. Keys are stored in `~/.dsh/.credentials.yaml` **in plain text** — see the warning in Part 1 Step 4.
 
-### Step 5: Copy the config
+### Step 5: Add the Figma MCP plugin
+
+`setup.sh` / `update.sh` do this for you once the `web` profile exists. By hand:
 
 ```bash
-mkdir -p ~/.dsh/profiles/web
-cp cordis.patch.yml ~/.dsh/profiles/web/
+dsh plugin --profile web add "file:$PWD/plugins/figma-bridge"
 ```
 
-If that file already has entries, merge by hand instead of overwriting (Part 6 Step 4).
+(Part 6 Step 4 has the full detail, including the manual config fallback.)
 
 ### Step 6: Import the bridge plugin
 
@@ -356,31 +357,29 @@ The npx process inherits the system environment, so nothing extra needs to be wr
 
 ### Step 4: Config file
 
-If you use the team repo, the easy path — just copy:
+If you use the team repo, the easy path — `setup.bat` / `setup.sh` and
+`update.bat` / `update.sh` add the Figma MCP server as a dsh plugin for you,
+once the `web` profile exists (`dsh web` has run at least once). By hand, from
+the repo root:
 
 ```
-mkdir "%USERPROFILE%\.dsh\profiles\web" 2>nul
-copy cordis.patch.yml "%USERPROFILE%\.dsh\profiles\web\"
+dsh plugin --profile web add "file:%CD%\plugins\figma-bridge"
 ```
 
 **macOS/Linux:**
 
 ```bash
-mkdir -p ~/.dsh/profiles/web
-cp cordis.patch.yml ~/.dsh/profiles/web/
+dsh plugin --profile web add "file:$PWD/plugins/figma-bridge"
 ```
 
-**If that file already has entries, don't overwrite it** — merge by hand.
+If that path contains a space, use `"""file:%CD%\plugins\figma-bridge"""`
+instead — see `plugins/team-updater/README.md`'s Install section for why. A
+path containing `(` or `)` cannot be used at all — pnpm rejects it with
+"Mismatch parenthesis".
 
-To do it by hand:
-
-```
-notepad %USERPROFILE%\.dsh\profiles\web\cordis.patch.yml
-```
-
-**macOS/Linux:** `nano ~/.dsh/profiles/web/cordis.patch.yml` (or any editor).
-
-If the file only contains `[]`, delete that and paste the following (keep the comment lines above):
+This installs `plugins/figma-bridge/cordis.patch.yml` — shown below for
+reference — as a plugin bundle, not a copy pasted into your profile's own
+config:
 
 ```yaml
 - insert:
@@ -393,11 +392,20 @@ If the file only contains `[]`, delete that and paste the following (keep the co
         args: ["-y", "figma-console-mcp@1.40.0"]
 ```
 
-**Keep the indentation exact** — YAML is strict about spaces, no tabs.
-
 The version is pinned for the same reason dsh is: with `@latest`, every machine
 runs a new release the moment it is published. `update.bat` / `update.sh` keep
-this line in step with the repo's `cordis.patch.yml`, changing only the version.
+an already-installed profile's copy in step with this repo's pin, changing
+only the version (`plugins/figma-bridge/lib/pin.js`).
+
+**If `dsh plugin add` fails** (no web profile yet, no pnpm, or a checkout path
+with a bracket), the command above prints why. As a last-resort fallback you
+can still hand-edit the profile's own config: open
+`%USERPROFILE%\.dsh\profiles\web\cordis.patch.yml` (**macOS/Linux:**
+`~/.dsh/profiles/web/cordis.patch.yml`) and, if it only contains `[]`, replace
+that with the YAML block above (keep the comment lines already in the file).
+**Keep the indentation exact** — YAML is strict about spaces, no tabs. A
+hand-edited entry like this won't be plugin-managed, so `verify` will flag it
+and `update` will migrate it into the plugin automatically next time it runs.
 
 Save, then restart dsh. In the window where `dsh web` is running press **Ctrl+C**, then start it again:
 
@@ -660,7 +668,7 @@ To build the whole system from scratch, follow this order. Details for each item
 - [ ] `dsh web` → `http://127.0.0.1:3080` → Settings → Models → add the Anthropic key
 - [ ] `setx FIGMA_ACCESS_TOKEN "figd_..."` and `setx ENABLE_MCP_APPS true`
 - [ ] Open a **new cmd** and verify `echo %FIGMA_ACCESS_TOKEN%`
-- [ ] Copy the repo's `cordis.patch.yml` to `%USERPROFILE%\.dsh\profiles\web\` (Part 6 Step 4)
+- [ ] `dsh plugin --profile web add "file:%CD%\plugins\figma-bridge"` (Part 6 Step 4)
 - [ ] Restart dsh → `figma_get_status` works in the session
 
 **Figma bridge**

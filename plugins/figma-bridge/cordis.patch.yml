@@ -1,0 +1,35 @@
+# dsh-figma-bridge — Figma MCP server row.
+#
+# Installed automatically by:
+#   dsh plugin --profile web add "file:<checkout>/plugins/figma-bridge"
+# (setup.sh/.bat and update.sh/.bat do this for you.) Because this package
+# declares dsh.bundle.patch, dsh plugin add appends it to dsh.profile.bundles
+# and this file's insert row is composed into the profile on every boot —
+# there is nothing to hand-copy.
+#
+# The token is NOT stored here. Set it as an environment variable first:
+#   Windows       setx FIGMA_ACCESS_TOKEN "figd_your_token"
+#                 setx ENABLE_MCP_APPS true
+#   Mac / Linux   export FIGMA_ACCESS_TOKEN="figd_your_token"
+#                 export ENABLE_MCP_APPS=true
+#                 (add both to ~/.zshrc or ~/.bashrc to persist)
+# The npx process inherits the system environment, so nothing else is needed.
+# Restart dsh from a NEW terminal after setting the variables.
+#
+# Windows tip: most setups work with "npx" as-is. If the figma tools fail to
+# load and dsh spawns stdio without a shell, change "command: npx" to
+# "command: npx.cmd" — the .cmd shim is what cmd.exe actually resolves.
+#
+# The server version is pinned, not @latest — this file is the single source of
+# truth for it. lib/pin.js carries a version bump here into an already-installed
+# profile's copy of this plugin (update.sh/.bat run it); verify.sh/.bat run it
+# with --check.
+
+- insert:
+    - id: mcp-figma
+      name: "@deepseek-ai/dsh-mcp-client"
+      config:
+        serverName: figma
+        transport: stdio
+        command: npx
+        args: ["-y", "figma-console-mcp@1.40.0"]

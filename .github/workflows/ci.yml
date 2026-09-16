@@ -49,6 +49,9 @@ jobs:
       - name: plugins/team-updater unit tests
         run: node plugins/team-updater/tests/check.mjs
 
+      - name: plugins/figma-bridge unit tests
+        run: node plugins/figma-bridge/tests/check.mjs
+
   smoke-windows:
     name: Smoke test (windows-latest)
     runs-on: windows-latest
@@ -61,3 +64,6 @@ jobs:
 
       - name: plugins/team-updater unit tests
         run: node plugins/team-updater/tests/check.mjs
+
+      - name: plugins/figma-bridge unit tests
+        run: node plugins/figma-bridge/tests/check.mjs

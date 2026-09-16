@@ -62,22 +62,42 @@ if "%ENABLE_MCP_APPS%"=="" (
 )
 
 REM ---------- MCP config ----------
+REM Plugin-managed: the figma entry lives in the plugin's own installed copy of
+REM cordis.patch.yml (profiles\web\node_modules\dsh-figma-bridge\), not the
+REM profile's personal one - dsh plugin add appends the package as a bundle
+REM rather than copying its patch into the profile's own file.
 set CFG=%USERPROFILE%\.dsh\profiles\web\cordis.patch.yml
-if not exist "%CFG%" (
-    echo   [FAIL] cordis.patch.yml not found
-    echo          Run dsh web once to create the profile, then copy the config.
-    set FAIL=1
-) else (
-    findstr /c:"serverName: figma" "%CFG%" >nul 2>&1
+set CFG_PKG=%USERPROFILE%\.dsh\profiles\web\package.json
+set PLUGIN_CFG=%USERPROFILE%\.dsh\profiles\web\node_modules\dsh-figma-bridge\cordis.patch.yml
+set "FIGMA_PLUGIN_MANAGED="
+findstr /c:"dsh-figma-bridge" "%CFG_PKG%" >nul 2>&1
+if not errorlevel 1 set "FIGMA_PLUGIN_MANAGED=1"
+if defined FIGMA_PLUGIN_MANAGED (
+    echo   [ OK ] figma-bridge plugin installed ^(dsh plugin add^)
+    findstr /c:"serverName: figma" "%PLUGIN_CFG%" >nul 2>&1
     if errorlevel 1 (
-        echo   [FAIL] cordis.patch.yml has no figma entry
-        echo          copy cordis.patch.yml "%%USERPROFILE%%\.dsh\profiles\web\"
+        echo   [FAIL] figma-bridge is installed but its cordis.patch.yml has no figma entry
+        echo          dsh plugin --profile web remove dsh-figma-bridge, then re-run setup.bat
         set FAIL=1
     ) else (
         echo   [ OK ] MCP config has the figma entry
-        where node >nul 2>&1
-        if not errorlevel 1 node "%~dp0scripts\figma-pin.mjs" --check
     )
+    where node >nul 2>&1
+    if not errorlevel 1 node "%~dp0plugins\figma-bridge\lib\pin.js" --check
+) else if exist "%CFG%" (
+    findstr /c:"serverName: figma" "%CFG%" >nul 2>&1
+    if errorlevel 1 (
+        echo   [FAIL] No figma entry found
+        echo          dsh plugin --profile web add "file:%~dp0plugins\figma-bridge"
+        set FAIL=1
+    ) else (
+        echo   [WARN] figma entry present but not plugin-managed - looks like an old hand-copy
+        echo          update.bat will migrate it automatically
+    )
+) else (
+    echo   [FAIL] cordis.patch.yml not found
+    echo          Run dsh web once to create the profile, then run setup.bat again.
+    set FAIL=1
 )
 
 REM ---------- Anthropic key ----------

@@ -123,32 +123,35 @@ if "%SKIP_DSH%"=="1" (
 )
 echo.
 
-REM ---------- the in-GUI update button ----------
-REM Re-run on every update so an existing install picks the button up, and so
-REM the spec follows this checkout if it was moved. Adding it twice is a no-op.
-echo [+] Checking the in-app update button...
+REM ---------- dsh plugins (update button, Figma MCP) ----------
+REM Re-run on every update so an existing install picks up the plugins, and so
+REM the spec follows this checkout if it was moved. Adding them twice is a no-op.
+echo [+] Checking dsh plugins (update button, Figma MCP)...
 set "DSH_PROFILE_DIR=%DSH_HOME%"
 if not defined DSH_PROFILE_DIR set "DSH_PROFILE_DIR=%USERPROFILE%\.dsh"
-set "UPDATER_SPEC=file:%SCRIPT_DIR%\plugins\team-updater"
-set "UPDATER_ARG="%UPDATER_SPEC%""
+set "PLUGIN_LOG=%TEMP%\dsh-setup-plugin-add.log"
 REM dsh runs pnpm through a shell on Windows without quoting its arguments, so
 REM a checkout path with a space reaches pnpm cut in two ("X:/My" not found).
 REM Quotes carried inside the argument survive that join; """...""" gives node
 REM the literal quotes while keeping the path inside cmd's own quoting, so a
 REM "(" or ")" in it cannot end the block below. Used only when the path has a
 REM space, so the plain form keeps working if dsh stops using a shell.
+set "UPDATER_SPEC=file:%SCRIPT_DIR%\plugins\team-updater"
+set "UPDATER_ARG="%UPDATER_SPEC%""
 if not "%UPDATER_SPEC: =%"=="%UPDATER_SPEC%" set "UPDATER_ARG="""%UPDATER_SPEC%""""
-set "UPDATER_LOG=%TEMP%\dsh-setup-plugin-add.log"
+set "FIGMA_SPEC=file:%SCRIPT_DIR%\plugins\figma-bridge"
+set "FIGMA_ARG="%FIGMA_SPEC%""
+if not "%FIGMA_SPEC: =%"=="%FIGMA_SPEC%" set "FIGMA_ARG="""%FIGMA_SPEC%""""
 REM pnpm itself cannot install from a path with brackets in it - it uses them in
 REM lockfile keys and fails with "Mismatch parenthesis" - so say so up front.
-set "UPDATER_BRACKETS="
-if not "%UPDATER_SPEC:(=%"=="%UPDATER_SPEC%" set "UPDATER_BRACKETS=1"
-if not "%UPDATER_SPEC:)=%"=="%UPDATER_SPEC%" set "UPDATER_BRACKETS=1"
+set "PLUGIN_BRACKETS="
+if not "%SCRIPT_DIR:(=%"=="%SCRIPT_DIR%" set "PLUGIN_BRACKETS=1"
+if not "%SCRIPT_DIR:)=%"=="%SCRIPT_DIR%" set "PLUGIN_BRACKETS=1"
 REM `dsh plugin` runs whatever pnpm is on PATH and does not ship one, so a
 REM machine with only Node and npm fails with "'pnpm' is not recognized".
 REM Major 12 is what this was tested with; its install script swaps in the
 REM native binary, which npm 11 only runs when allowed.
-if defined UPDATER_BRACKETS (
+if defined PLUGIN_BRACKETS (
     echo   [WARN] Skipped: pnpm cannot install a plugin from a folder whose path
     echo          contains a bracket. Move this checkout to a path without ^( or ^)
     echo          and run this again.
@@ -158,29 +161,34 @@ if defined UPDATER_BRACKETS (
         echo          pnpm not found - installing it, dsh plugins need it...
         call npm install -g --allow-scripts=pnpm pnpm@12
     )
-    call dsh plugin --profile web add %UPDATER_ARG% > "%UPDATER_LOG%" 2>&1
+    REM A hand-copied profile from before figma-bridge existed would otherwise
+    REM end up with two "serverName: figma" rows once the plugin is added.
+    where node >nul 2>&1
+    if not errorlevel 1 node "%SCRIPT_DIR%\plugins\figma-bridge\lib\migrate.js"
+    call dsh plugin --profile web add %UPDATER_ARG% > "%PLUGIN_LOG%" 2>&1
     if errorlevel 1 (
-        echo   [WARN] Could not add it. pnpm said:
-        type "%UPDATER_LOG%"
+        echo   [WARN] Could not add team-updater. pnpm said:
+        type "%PLUGIN_LOG%"
         echo          Run this by hand once the cause is fixed:
         echo          dsh plugin --profile web add %UPDATER_ARG%
     ) else (
-        echo   [ OK ] Update button present - Settings ^> General
+        echo   [ OK ] team-updater present - Settings ^> General
     )
+    call dsh plugin --profile web add %FIGMA_ARG% > "%PLUGIN_LOG%" 2>&1
+    if errorlevel 1 (
+        echo   [WARN] Could not add figma-bridge. pnpm said:
+        type "%PLUGIN_LOG%"
+        echo          Run this by hand once the cause is fixed:
+        echo          dsh plugin --profile web add %FIGMA_ARG%
+    ) else (
+        echo   [ OK ] figma-bridge present
+    )
+    REM dsh plugin add installs a *copy* of figma-bridge, not a link, so a
+    REM version bump in this checkout still needs carrying into that copy.
+    where node >nul 2>&1
+    if not errorlevel 1 node "%SCRIPT_DIR%\plugins\figma-bridge\lib\pin.js"
 ) else (
     echo   [WARN] No web profile yet - run "dsh web" once, then re-run this script
-)
-echo.
-
-REM ---------- the Figma MCP version ----------
-REM The profile's cordis.patch.yml was copied in by hand once, so a version bump
-REM in this repo would never reach it. Only the version token is rewritten.
-echo [+] Checking the Figma MCP version...
-where node >nul 2>&1
-if errorlevel 1 (
-    echo   [WARN] node not found - skipping
-) else (
-    node "%SCRIPT_DIR%\scripts\figma-pin.mjs"
 )
 echo.
 

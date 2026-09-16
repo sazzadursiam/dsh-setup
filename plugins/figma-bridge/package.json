@@ -1,0 +1,29 @@
+{
+  "name": "dsh-figma-bridge",
+  "version": "0.1.0",
+  "description": "Registers the Figma MCP server (figma-console-mcp, Local Mode) in a dsh web profile.",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "deepseek",
+    "figma",
+    "mcp",
+    "plugin"
+  ],
+  "type": "module",
+  "exports": {
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "license": "MIT"
+}

@@ -107,11 +107,11 @@ else
 fi
 say ""
 
-# ---------- the in-GUI update button ----------
-# Re-run on every update so an existing install picks the button up, and so the
-# spec follows this checkout if it was moved. Adding it twice is a no-op.
-say "${BOLD}[+]${OFF} Checking the in-app update button..."
-UPDATER_LOG="${TMPDIR:-/tmp}/dsh-setup-plugin-add.log"
+# ---------- dsh plugins (update button, Figma MCP) ----------
+# Re-run on every update so an existing install picks up the plugins, and so
+# the spec follows this checkout if it was moved. Adding them twice is a no-op.
+say "${BOLD}[+]${OFF} Checking dsh plugins (update button, Figma MCP)..."
+PLUGIN_LOG="${TMPDIR:-/tmp}/dsh-setup-plugin-add.log"
 case "$SCRIPT_DIR" in
   # pnpm uses brackets in lockfile keys and fails with "Mismatch parenthesis".
   *'('*|*')'*)
@@ -128,27 +128,24 @@ case "$SCRIPT_DIR" in
         info "pnpm not found - installing it, dsh plugins need it..."
         npm install -g --allow-scripts=pnpm pnpm@12 || warn "pnpm install failed - see the npm output above"
       fi
-      if dsh plugin --profile web add "file:$SCRIPT_DIR/plugins/team-updater" >"$UPDATER_LOG" 2>&1; then
-        ok "Update button present - Settings > General"
-      else
-        warn "Could not add it. pnpm said:"
-        sed 's/^/         /' "$UPDATER_LOG"
-        hint "Run this by hand once the cause is fixed:"
-        hint "dsh plugin --profile web add \"file:$SCRIPT_DIR/plugins/team-updater\""
-      fi
+      # A hand-copied profile from before figma-bridge existed would otherwise
+      # end up with two "serverName: figma" rows once the plugin is added.
+      command -v node >/dev/null 2>&1 && node "$SCRIPT_DIR/plugins/figma-bridge/lib/migrate.js"
+      for plugin in team-updater figma-bridge; do
+        if dsh plugin --profile web add "file:$SCRIPT_DIR/plugins/$plugin" >"$PLUGIN_LOG" 2>&1; then
+          ok "$plugin present"
+        else
+          warn "Could not add $plugin. pnpm said:"
+          sed 's/^/         /' "$PLUGIN_LOG"
+          hint "Run this by hand once the cause is fixed:"
+          hint "dsh plugin --profile web add \"file:$SCRIPT_DIR/plugins/$plugin\""
+        fi
+      done
+      # dsh plugin add installs a *copy* of figma-bridge, not a link, so a
+      # version bump in this checkout still needs carrying into that copy.
+      command -v node >/dev/null 2>&1 && node "$SCRIPT_DIR/plugins/figma-bridge/lib/pin.js"
     fi ;;
 esac
-say ""
-
-# ---------- the Figma MCP version ----------
-# The profile's cordis.patch.yml was copied in by hand once, so a version bump in
-# this repo would never reach it. Only the version token is rewritten.
-say "${BOLD}[+]${OFF} Checking the Figma MCP version..."
-if command -v node >/dev/null 2>&1; then
-  node "$SCRIPT_DIR/scripts/figma-pin.mjs"
-else
-  warn "node not found - skipping"
-fi
 say ""
 
 # ---------- 3. the shared agent rules ----------
