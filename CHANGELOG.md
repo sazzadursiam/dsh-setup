@@ -24,6 +24,12 @@
   way they already install `plugins/team-updater/`. Root `cordis.patch.yml` and
   `scripts/figma-pin.mjs` are removed; `update` migrates an existing
   hand-copied profile entry automatically before adding the plugin.
+- **A "Figma token" row under Settings → General.** Paste the token there and
+  save — no terminal, no `export`/`setx`, no shell syntax to remember. It
+  writes into the installed plugin's own `cordis.patch.yml` (`env:` on the
+  `mcp-figma` entry); restart dsh afterward to use it, since that file is only
+  read at boot. Setting the token as a real environment variable still works
+  exactly as before — `verify` accepts either.
 
 ### Fixed
 
@@ -44,6 +50,15 @@
   `dsh --profile web --dump-config` first when the profile is missing - it
   creates the profile as a side effect and exits immediately, with no server
   or browser involved - so a single run adds both plugins on a first install.
+- **`dsh plugin add "file:..."` hardlinks the installed copy to the checkout
+  instead of copying it** (confirmed by matching inode numbers) — writing to
+  "the installed copy" in place, as `plugins/figma-bridge/lib/pin.js` did,
+  silently rewrote the tracked checkout file too, since it shares the same
+  inode. Found while building the Settings → General token row, which writes
+  far more often than a version-pin bump does. Both `pin.js` and the new
+  `plugins/figma-bridge/lib/token-store.js` now write to a temp file and
+  rename it over the target, which replaces the directory entry instead of
+  the shared inode's contents and breaks the hardlink cleanly.
 
 ### Changed
 

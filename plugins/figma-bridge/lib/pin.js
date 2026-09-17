@@ -12,7 +12,7 @@
  * Every outcome prints one line and exits 0 — callers treat this as a step
  * that can be skipped, never one that fails a run.
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rename, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -74,7 +74,14 @@ const rewritten = profile.split('\n')
 	.map((line) => isComment(line) ? line : line.replace(TOKEN, (_match, quote) => `${quote}figma-console-mcp@${pinned}${quote}`))
 	.join('\n');
 try {
-	await writeFile(PROFILE_CONFIG, rewritten, 'utf8');
+	// dsh plugin add hardlinks this package's files into the profile rather
+	// than copying them (confirmed: same inode as the checkout), so writeFile
+	// here would truncate the shared inode and corrupt the tracked checkout
+	// file. Writing to a temp file and renaming over the target replaces the
+	// directory entry instead, which breaks the hardlink cleanly.
+	const tmp = `${PROFILE_CONFIG}.tmp.${process.pid}`;
+	await writeFile(tmp, rewritten, 'utf8');
+	await rename(tmp, PROFILE_CONFIG);
 } catch (error) {
 	warn(`Could not rewrite ${PROFILE_CONFIG}: ${error.message}`);
 	process.exit(0);

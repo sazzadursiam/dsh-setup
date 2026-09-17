@@ -39,26 +39,39 @@ if errorlevel 1 (
 )
 
 REM ---------- Figma token ----------
-if "%FIGMA_ACCESS_TOKEN%"=="" (
-    echo   [FAIL] FIGMA_ACCESS_TOKEN not set in this terminal
-    echo          Run:  setx FIGMA_ACCESS_TOKEN "figd_..."
-    echo          Then CLOSE this window and open a NEW one, then re-run this.
-    echo          ^(setx only affects NEW terminals - same-window rechecks still fail.^)
-    set FAIL=1
-) else (
-    echo   [ OK ] FIGMA_ACCESS_TOKEN is set
+REM Two valid ways to have set this: the shell env var (setx, or this script's
+REM own environment), or the Settings > General "Figma token" row, which
+REM writes into the installed plugin copy's cordis.patch.yml instead -
+REM dsh-mcp-client never sees it as an env var in that case.
+set "PLUGIN_CFG_TOKEN_CHECK=%USERPROFILE%\.dsh\profiles\web\node_modules\dsh-figma-bridge\cordis.patch.yml"
+set "FIGMA_VIA_SETTINGS="
+findstr /c:"FIGMA_ACCESS_TOKEN:" "%PLUGIN_CFG_TOKEN_CHECK%" >nul 2>&1
+if not errorlevel 1 set "FIGMA_VIA_SETTINGS=1"
+if not "%FIGMA_ACCESS_TOKEN%"=="" (
+    echo   [ OK ] FIGMA_ACCESS_TOKEN is set in this terminal
     echo %FIGMA_ACCESS_TOKEN% | findstr /b "figd_" >nul
     if errorlevel 1 (
         echo   [WARN] Token does not start with figd_ - check you copied the right value
     )
+) else if defined FIGMA_VIA_SETTINGS (
+    echo   [ OK ] Figma token saved via Settings ^> General ^(not a terminal env var - that's fine^)
+) else (
+    echo   [FAIL] No Figma token found - not in this terminal, not in Settings
+    echo          dsh web -^> Settings -^> General -^> Figma token   ^(or setx FIGMA_ACCESS_TOKEN "figd_..."^)
+    set FAIL=1
 )
 
 REM ---------- ENABLE_MCP_APPS ----------
-if "%ENABLE_MCP_APPS%"=="" (
-    echo   [WARN] ENABLE_MCP_APPS not set
-    echo          setx ENABLE_MCP_APPS true
-) else (
+set "MCP_APPS_VIA_SETTINGS="
+findstr /c:"ENABLE_MCP_APPS:" "%PLUGIN_CFG_TOKEN_CHECK%" >nul 2>&1
+if not errorlevel 1 set "MCP_APPS_VIA_SETTINGS=1"
+if not "%ENABLE_MCP_APPS%"=="" (
     echo   [ OK ] ENABLE_MCP_APPS = %ENABLE_MCP_APPS%
+) else if defined MCP_APPS_VIA_SETTINGS (
+    echo   [ OK ] ENABLE_MCP_APPS set via Settings ^> General ^(not a terminal env var - that's fine^)
+) else (
+    echo   [WARN] ENABLE_MCP_APPS not set
+    echo          setx ENABLE_MCP_APPS true   ^(or set the token via Settings ^> General, which sets this too^)
 )
 
 REM ---------- MCP config ----------

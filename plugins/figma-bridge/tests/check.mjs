@@ -7,10 +7,10 @@
  * (dependency-free, like plugins/team-updater/tests/check.mjs).
  */
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 let failures = 0;
 function check(label, actual, expected) {
@@ -173,6 +173,110 @@ const LEGACY_BLOCK = `# Your patch layer for this dsh profile, applied after eve
 
 		const untouched = await readFile(join(profileDir, 'cordis.patch.yml'), 'utf8');
 		check('migrate does not modify a merged block', untouched, merged);
+	} finally {
+		await rm(sandbox, { recursive: true, force: true });
+	}
+}
+
+// ── lib/token-store.js, driven in a subprocess (module-level PROFILE_CONFIG
+// is fixed at import time from DSH_HOME, so each scenario needs its own
+// process rather than a fresh in-process import) ───────────────────────────
+const TOKEN_STORE_URL = pathToFileURL(fileURLToPath(new URL('../lib/token-store.js', import.meta.url))).href;
+
+function runTokenStore(dshHome, action, token) {
+	const driver = `
+		const ts = await import(${JSON.stringify(TOKEN_STORE_URL)});
+		try {
+			if (${JSON.stringify(action)} === 'write') await ts.writeToken(${JSON.stringify(token ?? '')});
+			if (${JSON.stringify(action)} === 'clear') await ts.clearToken();
+			console.log(JSON.stringify(await ts.readStatus()));
+		} catch (error) {
+			console.log('ERROR: ' + error.message);
+			process.exitCode = 1;
+		}
+	`;
+	try {
+		const stdout = execFileSync(process.execPath, ['--input-type=module', '-e', driver], {
+			env: { ...process.env, DSH_HOME: dshHome },
+			encoding: 'utf8'
+		});
+		return { stdout, status: 0 };
+	} catch (error) {
+		return { stdout: error.stdout ?? '', status: error.status ?? 1 };
+	}
+}
+
+const BASE_PATCH = `- insert:
+    - id: mcp-figma
+      name: "@deepseek-ai/dsh-mcp-client"
+      config:
+        serverName: figma
+        transport: stdio
+        command: npx
+        args: ["-y", "figma-console-mcp@1.40.0"]
+
+- insert:
+    - id: figma-bridge-settings
+      name: dsh-figma-bridge
+`;
+
+{
+	const sandbox = await mkdtemp(join(tmpdir(), 'figma-bridge-token-'));
+	try {
+		const installed = installedProfileDir(sandbox);
+		await mkdir(installed, { recursive: true });
+		await writeFile(join(installed, 'cordis.patch.yml'), BASE_PATCH);
+
+		const initial = runTokenStore(sandbox, 'status');
+		check('readStatus reports no token on a fresh install', JSON.parse(initial.stdout).tokenSet, false);
+
+		const wrote = runTokenStore(sandbox, 'write', 'figd_abcdefghijklmnop');
+		check('writeToken exits 0', wrote.status, 0);
+		check('writeToken masks the saved token', JSON.parse(wrote.stdout).masked, 'figd_****mnop');
+
+		const afterWrite = await readFile(join(installed, 'cordis.patch.yml'), 'utf8');
+		check('the mcp-figma block gets an env: entry', /env:\s*\r?\n\s*FIGMA_ACCESS_TOKEN: "figd_abcdefghijklmnop"/.test(afterWrite), true);
+		check('ENABLE_MCP_APPS is set alongside the token', /ENABLE_MCP_APPS: "true"/.test(afterWrite), true);
+		check('the figma-bridge-settings block is untouched', /id: figma-bridge-settings/.test(afterWrite), true);
+
+		const replaced = runTokenStore(sandbox, 'write', 'figd_second_token_1234');
+		check('writing again reports the new token', JSON.parse(replaced.stdout).masked, 'figd_****1234');
+		const afterReplace = await readFile(join(installed, 'cordis.patch.yml'), 'utf8');
+		check('replacing a token does not duplicate the env: block', (afterReplace.match(/env:/g) ?? []).length, 1);
+		check('the old token is gone after replacing', afterReplace.includes('abcdefghijklmnop'), false);
+
+		const specialChars = runTokenStore(sandbox, 'write', 'figd_has_"quote"_and_\\backslash');
+		check('a token with quotes/backslashes is accepted', specialChars.status, 0);
+		const afterSpecial = await readFile(join(installed, 'cordis.patch.yml'), 'utf8');
+		check('quotes and backslashes are YAML-escaped', afterSpecial.includes('figd_has_\\"quote\\"_and_\\\\backslash'), true);
+		check('the roundtrip masks the unescaped value', JSON.parse(specialChars.stdout).masked, 'figd_****lash');
+
+		const rejected = runTokenStore(sandbox, 'write', 'line one\nline two');
+		check('a token containing a newline is rejected', /ERROR/.test(rejected.stdout), true);
+
+		const backupExists = await readdir(installed);
+		check('a .bak backup was written', backupExists.includes('cordis.patch.yml.bak'), true);
+		check('no leftover .tmp file from the atomic write', backupExists.some((name) => name.includes('.tmp.')), false);
+
+		const cleared = runTokenStore(sandbox, 'clear');
+		check('clearToken exits 0', cleared.status, 0);
+		check('clearToken reports no token set', JSON.parse(cleared.stdout).tokenSet, false);
+		const afterClear = await readFile(join(installed, 'cordis.patch.yml'), 'utf8');
+		check('clearToken removes the env: block entirely', /env:/.test(afterClear), false);
+		check('clearToken leaves the rest of the file untouched', afterClear, BASE_PATCH);
+	} finally {
+		await rm(sandbox, { recursive: true, force: true });
+	}
+}
+
+{
+	const sandbox = await mkdtemp(join(tmpdir(), 'figma-bridge-token-missing-'));
+	try {
+		const result = runTokenStore(sandbox, 'status');
+		check('readStatus reports not installed when the profile does not exist', JSON.parse(result.stdout).installed, false);
+
+		const wrote = runTokenStore(sandbox, 'write', 'figd_whatever');
+		check('writeToken on a missing install reports an error, not a crash', /ERROR/.test(wrote.stdout), true);
 	} finally {
 		await rm(sandbox, { recursive: true, force: true });
 	}

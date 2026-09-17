@@ -52,8 +52,8 @@ On Windows, if the script installs Node or Git, it stops and asks you to reopen 
 
 ## Manual steps
 
-1. **Set your Figma token** as an environment variable (see `.env.example`)
-2. **Run `dsh web`**, then add your Anthropic API key under Settings → Models
+1. **Run `dsh web`**, then set your Figma token under Settings → General → "Figma token" (no terminal needed — restart dsh after saving). Setting it as an environment variable instead still works too (see `.env.example`).
+2. **Add your Anthropic API key** under Settings → Models
 3. **Import the bridge plugin** into Figma Desktop
 
 Full detail in `SETUP.md`.
@@ -221,9 +221,9 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 
 ## Secrets
 
-No tokens live in this repo. The Figma token is read from the system environment, and the Anthropic key is entered in the dsh UI.
+No tokens live in this repo. The Figma token can be set as a system environment variable, or pasted into Settings → General in the dsh UI (see `plugins/figma-bridge/`); the Anthropic key is entered in the dsh UI.
 
-Entering a key in the UI is not the same as encrypting it: dsh writes every provider key **in plain text** to `~/.dsh/.credentials.yaml`. Never copy that file or the `.dsh/` folder to another machine, a repo, or a syncing backup, and never paste its contents anywhere. Details in `SETUP.md`, Part 1 Step 4.
+Entering a key in the UI is not the same as encrypting it: dsh writes every provider key **in plain text** to `~/.dsh/.credentials.yaml`, and the Figma token set via Settings → General is written **in plain text** to `~/.dsh/profiles/web/node_modules/dsh-figma-bridge/cordis.patch.yml`. Never copy those files or the `.dsh/` folder to another machine, a repo, or a syncing backup, and never paste their contents anywhere. Details in `SETUP.md`, Part 1 Step 4.
 
 If a token ever gets committed, deleting the file is not enough — it stays in git history. Revoke it at figma.com → Settings → Security and issue a new one.
 

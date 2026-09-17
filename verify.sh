@@ -47,23 +47,32 @@ else
 fi
 
 # ---------- Figma token ----------
+# Two valid ways to have set this: the shell env var (export/setx, or this
+# script's own environment), or the Settings > General "Figma token" row,
+# which writes into the installed plugin copy's cordis.patch.yml instead -
+# dsh-mcp-client never sees it as a shell env var in that case.
+PLUGIN_CFG_TOKEN_CHECK="$HOME/.dsh/profiles/web/node_modules/dsh-figma-bridge/cordis.patch.yml"
 if [ -n "${FIGMA_ACCESS_TOKEN:-}" ]; then
-  pass "FIGMA_ACCESS_TOKEN is set"
+  pass "FIGMA_ACCESS_TOKEN is set in this shell"
   case "$FIGMA_ACCESS_TOKEN" in
     figd_*) ;;
     *) warn "Token does not start with figd_ - check you copied the right value" ;;
   esac
+elif [ -f "$PLUGIN_CFG_TOKEN_CHECK" ] && grep -q "FIGMA_ACCESS_TOKEN:" "$PLUGIN_CFG_TOKEN_CHECK"; then
+  pass "Figma token saved via Settings > General (not a shell env var - that's fine)"
 else
-  fail "FIGMA_ACCESS_TOKEN not set in this shell"
-  hint 'export FIGMA_ACCESS_TOKEN="figd_..."  (add it to ~/.zshrc or ~/.bashrc)'
+  fail "No Figma token found - not in this shell, not in Settings"
+  hint "dsh web -> Settings -> General -> Figma token   (or export FIGMA_ACCESS_TOKEN=\"figd_...\")"
 fi
 
 # ---------- ENABLE_MCP_APPS ----------
 if [ -n "${ENABLE_MCP_APPS:-}" ]; then
   pass "ENABLE_MCP_APPS = $ENABLE_MCP_APPS"
+elif [ -f "$PLUGIN_CFG_TOKEN_CHECK" ] && grep -q "ENABLE_MCP_APPS:" "$PLUGIN_CFG_TOKEN_CHECK"; then
+  pass "ENABLE_MCP_APPS set via Settings > General (not a shell env var - that's fine)"
 else
   warn "ENABLE_MCP_APPS not set"
-  hint "export ENABLE_MCP_APPS=true"
+  hint "export ENABLE_MCP_APPS=true   (or set the token via Settings > General, which sets this too)"
 fi
 
 # ---------- MCP config ----------

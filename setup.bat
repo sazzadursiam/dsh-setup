@@ -172,9 +172,11 @@ echo.
 echo Manual steps left - see SETUP.md for details:
 echo.
 echo  1. Set your Figma token (get it from figma.com - Settings - Security):
-echo        setx FIGMA_ACCESS_TOKEN "figd_your_token"
-echo        setx ENABLE_MCP_APPS true
-echo     Then CLOSE this window and open a new one.
+echo        Run dsh web, then Settings -^> General -^> "Figma token" - paste it there.
+echo        ^(No terminal needed for this; restart dsh after saving.^)
+echo     Or by hand: setx FIGMA_ACCESS_TOKEN "figd_your_token"
+echo                 setx ENABLE_MCP_APPS true
+echo                 Then CLOSE this window and open a new one.
 echo.
 echo  2. Run:  dsh web
 echo     Open: http://127.0.0.1:3080

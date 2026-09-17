@@ -33,3 +33,11 @@
         transport: stdio
         command: npx
         args: ["-y", "figma-console-mcp@1.40.0"]
+
+# Settings > General row for pasting the Figma token without a terminal. Its
+# own id/block, separate from mcp-figma above, so migrate.js's single-id-per-
+# block assumption for the legacy hand-copy cleanup keeps working. Self-
+# referencing name: the Loader resolves it as a module and imports lib/index.js.
+- insert:
+    - id: figma-bridge-settings
+      name: dsh-figma-bridge

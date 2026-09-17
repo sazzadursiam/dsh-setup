@@ -160,9 +160,11 @@ npm install -g --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,node-pty,
 
 The `--allow-scripts` part is essential — Part 1 Step 2 explains why.
 
-### Step 3: Environment variable
+### Step 3: Figma token
 
-Append to the end of `~/.zshrc` (zsh is macOS's default shell):
+Once `dsh web` is running (Step 4 below installs it): Settings → General → "Figma token" → paste it and save. No terminal needed — restart dsh afterward to use it.
+
+By hand instead, append to the end of `~/.zshrc` (zsh is macOS's default shell):
 
 ```bash
 export FIGMA_ACCESS_TOKEN="figd_..."
@@ -329,9 +331,11 @@ The token starts with `figd_` and is **shown only once** — copy it immediately
 
 **Never put the token in a file or screenshot.** If it leaks, revoke it immediately at figma.com → Settings → Security and issue a new one.
 
-### Step 3: Set the environment variable
+### Step 3: Set the Figma token
 
-In cmd:
+Once `dsh web` is running (Step 4 installs it, Step 5 below wires up the plugin): Settings → General → "Figma token" → paste it and save. No terminal needed — restart dsh afterward to use it. This writes the token in plain text into `~/.dsh/profiles/web/node_modules/dsh-figma-bridge/cordis.patch.yml` (see Secrets in `README.md`).
+
+By hand instead, in cmd:
 
 ```
 setx FIGMA_ACCESS_TOKEN "figd_..."
@@ -619,7 +623,7 @@ verify.bat          # Windows
 ./verify.sh         # macOS / Linux
 ```
 
-> **Note (Windows):** running verify in the **same window** after `setx` shows a false `[FAIL]` on `FIGMA_ACCESS_TOKEN` — `setx` only affects new terminals. Close the window, open a new cmd, and run it again.
+> **Note (Windows):** if you set the token by hand with `setx`, running verify in the **same window** afterward shows a false `[FAIL]` on `FIGMA_ACCESS_TOKEN` — `setx` only affects new terminals. Close the window, open a new cmd, and run it again. Setting the token via Settings → General instead does not have this problem — `verify.bat` checks that file directly.
 
 It also reports whether `~/.dsh/AGENTS.md` is installed and came from this
 version of the repo — worth checking when the agent ignores a rule you know you
@@ -641,7 +645,7 @@ Then use the table below.
 | `client registration failed: HTTP 403` (Figma OAuth)                       | Figma doesn't allow dynamic client registration. The official remote MCP won't run in dsh — use figma-console-mcp                                                      |
 | `Cannot read properties of undefined (reading 'bytes')`                    | Screenshot tool is broken. Session is poisoned — open a **New Session**                                                                                              |
 | `figma_get_status` tool missing                                            | 1) Check `cordis.patch.yml` indentation (spaces, not tabs). 2) On Windows try `command: npx` → `command: npx.cmd`. Then restart dsh                    |
-| Can't get the Figma token                                                  | Check that you started dsh from a new cmd after `setx`                                                                                                               |
+| Can't get the Figma token                                                  | If set via `setx`, check that you started dsh from a new cmd afterward. If set via Settings → General, restart dsh (Ctrl+C, then `dsh web` again)                    |
 | Figma write tools not working                                              | Bridge plugin window closed, or Figma Desktop closed, or you're in Minimal mode                                                                                       |
 
 The `deprecated node-domexception` warning can be ignored. The npm update notice is optional too.
@@ -666,8 +670,8 @@ To build the whole system from scratch, follow this order. Details for each item
 **dsh config**
 
 - [ ] `dsh web` → `http://127.0.0.1:3080` → Settings → Models → add the Anthropic key
-- [ ] `setx FIGMA_ACCESS_TOKEN "figd_..."` and `setx ENABLE_MCP_APPS true`
-- [ ] Open a **new cmd** and verify `echo %FIGMA_ACCESS_TOKEN%`
+- [ ] Settings → General → "Figma token" → paste and save (or by hand: `setx FIGMA_ACCESS_TOKEN "figd_..."` and `setx ENABLE_MCP_APPS true`, then open a **new cmd**)
+- [ ] Restart dsh so it picks up the token
 - [ ] `dsh plugin --profile web add "file:%CD%\plugins\figma-bridge"` (Part 6 Step 4)
 - [ ] Restart dsh → `figma_get_status` works in the session
 

@@ -36,10 +36,29 @@
       "Bash(shellcheck /c/Users/AC/Projects/dsh-setup/setup.sh /c/Users/AC/Projects/dsh-setup/update.sh /c/Users/AC/Projects/dsh-setup/verify.sh /c/Users/AC/Projects/dsh-setup/tests/smoke.sh)",
       "Bash(echo \"exit: $?\")",
       "PowerShell(cmd /c \"`\"C:\\\\Users\\\\AC\\\\Projects\\\\dsh-setup\\\\tests\\\\smoke.bat`\"\" 2>&1)",
-      "Read(//c/Users/AC/.dsh/profiles/web/**)"
+      "Read(//c/Users/AC/.dsh/profiles/web/**)",
+      "Bash(node --check plugins/figma-bridge/lib/index.js)",
+      "Bash(node --check plugins/figma-bridge/lib/token-store.js)",
+      "Bash(node --check plugins/figma-bridge/lib/client.js)",
+      "Bash(export DSH_HOME=/tmp/dsh-figma-sandbox)",
+      "Bash(dsh --profile web --dump-config)",
+      "Read(//tmp/**)",
+      "Bash(powershell -NoProfile -Command \"Get-Process -Id 3532 -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime,Path\")",
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 3532 -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 300; Get-Process -Id 3532 -ErrorAction SilentlyContinue\")",
+      "Bash(echo \"exit=$?\")",
+      "Bash(node --check plugins/figma-bridge/lib/pin.js)",
+      "Bash(rm -rf /tmp/tstest)",
+      "Bash(mkdir -p /tmp/tstest/profiles/web/node_modules/dsh-figma-bridge)",
+      "Bash(DSH_HOME=/tmp/tstest node -e ' *)",
+      "Read(//tmp/tstest/profiles/web/node_modules/dsh-figma-bridge/**)",
+      "Read(//tmp/tstest/profiles/web/node_modules/**)",
+      "Bash(powershell -NoProfile -Command \"Get-Process -Id 8672,15284 -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime\")",
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 8672,15284 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(tasklist)"
     ],
     "additionalDirectories": [
-      "C:\\Users\\AC\\AppData\\Local\\Temp\\claude\\c--Users-AC-Projects-dsh-setup\\eecc254e-39ef-4ccb-a3c3-b4b23fa40321\\scratchpad\\real_repo_test"
+      "C:\\Users\\AC\\AppData\\Local\\Temp\\claude\\c--Users-AC-Projects-dsh-setup\\eecc254e-39ef-4ccb-a3c3-b4b23fa40321\\scratchpad\\real_repo_test",
+      "\\tmp"
     ]
   }
 }
