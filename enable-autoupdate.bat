@@ -27,7 +27,6 @@ if errorlevel 1 goto :failed
 echo   [ OK ] Done. From now on Windows checks at login.
 echo         Remove it any time: press Win+R, type shell:startup
 echo         If you move this repo, run this script again from the new location.
-pause
 exit /b 0
 
 :failed
@@ -35,5 +34,4 @@ echo.
 echo   [FAIL] Could not create the startup entry.
 echo          Do it by hand: Win+R, type shell:startup, then copy a shortcut
 echo          to check.bat into that folder.
-pause
 exit /b 1
