@@ -1,12 +1,13 @@
 /**
  * dsh-figma-bridge — host half.
  *
- * Ships two routes on the web GUI's own origin and a browser row that calls
+ * Ships routes on the web GUI's own origin and a browser row that calls
  * them, so the Figma token can be set from Settings > General instead of a
  * terminal `export`/`setx`:
  *
  *   GET  /figma-bridge/status  → whether a token is saved, masked
  *   POST /figma-bridge/token   → save a new token (also clears it, {token: ""})
+ *   POST /figma-bridge/remove  → uninstall this plugin from the web profile
  *
  * The token is written into this plugin's own INSTALLED copy of
  * cordis.patch.yml (lib/token-store.js — the same file lib/pin.js already
@@ -15,19 +16,29 @@
  * restarted — there is no live-reload for a bundle's own patch file, only for
  * the profile's. The row says so; this module never restarts anything itself.
  *
+ * remove lives here rather than in dsh-team-updater (which hosts the *install*
+ * route): unlike installing, removing runs while this plugin is already
+ * loaded and can host its own route — no bootstrapping problem, and
+ * team-updater never needs to know a "remove" concept exists. Like figma
+ * install, `dsh plugin remove` only touches the profile's node_modules; it
+ * runs synchronously here and just reports that a restart is needed.
+ *
  * The routes carry no authorization of their own; every request is first put
  * through the Connection Host/Origin fence and browser authentication, the
  * same policy the `/api` bridge and dsh-team-updater's routes use.
  * @module dsh-figma-bridge
  */
+import { run } from './proc.js';
 import { clearToken, readStatus, TokenStoreError, writeToken } from './token-store.js';
 
-/** Stable Cordis plugin name. */
+/** Stable Cordis plugin name; also the package `dsh plugin remove` takes. */
 const name = 'dsh-figma-bridge';
 /** Services required before the routes can be claimed. */
 const inject = ['webServer', 'connection'];
 const ROUTE_BASE = '/figma-bridge';
 const BODY_LIMIT_BYTES = 8 * 1024;
+/** `dsh plugin remove` just drops a node_modules entry — fast, but pnpm may still need to relink the store. */
+const REMOVE_TIMEOUT_MS = 2 * 60 * 1000;
 
 /** Write one JSON response. */
 function writeJson(response, status, body) {
@@ -86,6 +97,19 @@ async function readJsonBody(request) {
 }
 
 /**
+ * Run `dsh` through the platform shell on Windows, for the same reason
+ * dsh-team-updater's own runDsh() does: an npm-global install is a `.cmd`
+ * shim that spawn() cannot execute directly without a shell.
+ */
+function runDsh(args, timeout) {
+	if (process.platform === 'win32') {
+		const quoted = args.map((arg) => (/[\s"]/.test(arg) ? `"${arg.replace(/"/g, '""')}"` : arg)).join(' ');
+		return run(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', `dsh ${quoted}`], { timeout });
+	}
+	return run('dsh', args, { timeout });
+}
+
+/**
  * Claim the figma-bridge routes on the web GUI's origin.
  * @param ctx - plugin context carrying the webServer and connection services.
  */
@@ -133,6 +157,19 @@ function apply(ctx) {
 			return;
 		}
 		writeJson(response, 200, { ok: true, restartNeeded: true, ...(await readStatus()) });
+	});
+
+	route(`${ROUTE_BASE}/remove`, 'POST', async (_request, response) => {
+		const result = await runDsh(['plugin', '--profile', 'web', 'remove', name], REMOVE_TIMEOUT_MS);
+		if (result.code !== 0) {
+			writeJson(response, 502, {
+				error: `dsh plugin remove failed (exit ${result.code ?? 'timeout'})`,
+				output: result.output,
+				command: `dsh plugin --profile web remove ${name}`
+			});
+			return;
+		}
+		writeJson(response, 200, { ok: true, removed: true, restartNeeded: true });
 	});
 }
 

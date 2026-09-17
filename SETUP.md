@@ -338,6 +338,8 @@ The token starts with `figd_` and is **shown only once** — copy it immediately
 
 Once `dsh web` is running (Step 4 installs it, Step 5 below wires up the plugin): Settings → General → "Figma token" → paste it and save. No terminal needed — restart dsh afterward to use it. This writes the token in plain text into `~/.dsh/profiles/web/node_modules/dsh-figma-bridge/cordis.patch.yml` (see Secrets in `README.md`).
 
+Changed your mind? The same row has a "Remove Figma integration" button — it uninstalls the plugin (and the saved token with it) and asks you to confirm first. Restart dsh afterward; add it back any time from Settings → General → "Add Figma integration".
+
 By hand instead, in cmd:
 
 ```

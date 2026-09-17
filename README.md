@@ -50,7 +50,7 @@ The script installs Node.js, Git and dsh. It asks once whether to also set up Fi
 
 On Windows, if the script installs Node or Git, it stops and asks you to reopen the terminal — Windows only picks up new PATH entries in a fresh one.
 
-**Only want dsh, no Figma?** Press Enter at that prompt (or don't pass `--with-figma`) and it's skipped — no MCP server, no extra tools. Add it later any time from `dsh web` → Settings → General → "Add Figma integration", no terminal needed.
+**Only want dsh, no Figma?** Press Enter at that prompt (or don't pass `--with-figma`) and it's skipped — no MCP server, no extra tools. Add it later any time from `dsh web` → Settings → General → "Add Figma integration", no terminal needed — and remove it again the same way, with a "Remove Figma integration" button next to the token field.
 
 ## Manual steps
 

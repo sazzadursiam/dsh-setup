@@ -15,6 +15,7 @@ window.__ModuleLoader__.load({
 		 */
 		const STATUS_URL = "/figma-bridge/status";
 		const TOKEN_URL = "/figma-bridge/token";
+		const REMOVE_URL = "/figma-bridge/remove";
 
 		const styles = {
 			row: {
@@ -129,7 +130,25 @@ window.__ModuleLoader__.load({
 				}
 			}, []);
 
-			const busy = phase === "loading" || phase === "saving";
+			// Removing deletes the token along with the plugin, so it asks first -
+			// unlike Save/Clear, this cannot be undone from this row afterward.
+			const remove = useCallback(async () => {
+				if (!window.confirm("Remove Figma integration? This deletes the saved token too. You'll need to restart dsh afterward.")) return;
+				setPhase("removing");
+				setMessage(null);
+				try {
+					await request(REMOVE_URL, {});
+					if (!mounted.current) return;
+					setPhase("removed");
+					setMessage("Removed — restart dsh (Ctrl+C, then run dsh web again) to finish.");
+				} catch (error) {
+					if (!mounted.current) return;
+					setPhase("error");
+					setMessage(error instanceof Error ? error.message : String(error));
+				}
+			}, []);
+
+			const busy = phase === "loading" || phase === "saving" || phase === "removing";
 			const meta = phase === "error"
 				? `error: ${message}`
 				: status === null ? "checking…" : status.tokenSet ? `set (${status.masked})` : "not set";
@@ -139,34 +158,43 @@ window.__ModuleLoader__.load({
 				h("div", { key: "text", style: styles.text }, [
 					h("div", { key: "title", style: styles.title }, "Figma token"),
 					h("div", { key: "meta", style: styles.meta }, meta)
-				])
-			]));
-			parts.push(h("div", { key: "form", style: styles.form }, [
-				h("input", {
-					key: "input",
-					type: "password",
-					placeholder: "figd_...",
-					value,
-					disabled: busy,
-					style: styles.input,
-					onChange: (event) => setValue(event.target.value)
-				}),
-				h("button", {
-					key: "save",
-					type: "button",
-					style: { ...styles.button, ...styles.primary, ...(busy || value.trim().length === 0 ? styles.disabled : {}) },
-					disabled: busy || value.trim().length === 0,
-					onClick: () => save(value)
-				}, busy ? "Working…" : "Save"),
-				status?.tokenSet ? h("button", {
-					key: "clear",
+				]),
+				phase === "removed" ? null : h("button", {
+					key: "remove",
 					type: "button",
 					style: { ...styles.button, ...(busy ? styles.disabled : {}) },
 					disabled: busy,
-					onClick: () => save("")
-				}, "Clear") : null
+					onClick: remove
+				}, phase === "removing" ? "Removing…" : "Remove Figma integration")
 			]));
-			if (phase === "saved" && message !== null) {
+			if (phase !== "removed") {
+				parts.push(h("div", { key: "form", style: styles.form }, [
+					h("input", {
+						key: "input",
+						type: "password",
+						placeholder: "figd_...",
+						value,
+						disabled: busy,
+						style: styles.input,
+						onChange: (event) => setValue(event.target.value)
+					}),
+					h("button", {
+						key: "save",
+						type: "button",
+						style: { ...styles.button, ...styles.primary, ...(busy || value.trim().length === 0 ? styles.disabled : {}) },
+						disabled: busy || value.trim().length === 0,
+						onClick: () => save(value)
+					}, busy ? "Working…" : "Save"),
+					status?.tokenSet ? h("button", {
+						key: "clear",
+						type: "button",
+						style: { ...styles.button, ...(busy ? styles.disabled : {}) },
+						disabled: busy,
+						onClick: () => save("")
+					}, "Clear") : null
+				]));
+			}
+			if ((phase === "saved" || phase === "removed") && message !== null) {
 				parts.push(h("div", { key: "note", style: styles.meta }, message));
 			}
 			return h("div", { style: { display: "flex", flexDirection: "column", width: "100%" }, "data-figma-bridge": phase }, parts);

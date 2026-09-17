@@ -42,6 +42,15 @@
   *before* `plugins/figma-bridge/lib/migrate.js` runs, since that script
   deletes the very evidence (`serverName: figma` in the profile's own
   `cordis.patch.yml`) the gate would otherwise need to see.
+- **A "Remove Figma integration" button** next to the "Figma token" row under
+  Settings → General. Confirms first (it deletes the saved token along with
+  the plugin), then runs `dsh plugin --profile web remove dsh-figma-bridge`
+  synchronously — the same no-detached-runner approach the install button
+  uses, since removing a plugin bundle doesn't touch the running dsh process
+  either. Lives in `plugins/figma-bridge/lib/index.js` itself rather than
+  `plugins/team-updater/`: unlike installing, removing runs while the plugin
+  is already loaded and can host its own route, so there's no bootstrapping
+  problem to work around.
 
 ### Fixed
 
