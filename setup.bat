@@ -189,6 +189,19 @@ if exist "%~dp0agents.bat" (
 )
 echo.
 
+REM ---------- auto-update check ----------
+REM Puts check.bat in Windows Startup so the team gets notified of new commits
+REM at login without anyone having to remember a separate manual step.
+echo [+] Enabling the login-time update check...
+if exist "%~dp0enable-autoupdate.bat" (
+    call "%~dp0enable-autoupdate.bat"
+    if errorlevel 1 echo   [WARN] Could not enable it - run enable-autoupdate.bat by hand
+    title dsh + Figma Setup
+) else (
+    echo   [WARN] enable-autoupdate.bat is missing from this checkout - skipping
+)
+echo.
+
 echo ============================================
 echo   INSTALL COMPLETE
 echo ============================================

@@ -11,7 +11,11 @@
 - **`enable-autoupdate.bat`** — one command that puts `check.bat` in the
   Windows Startup folder, minimized, so the check runs at every login without
   ever flashing a window (unseen when there is nothing new, one prompt in the
-  taskbar when there is).
+  taskbar when there is). `setup.bat` and `update.bat` now run it automatically
+  as their last step, since nobody on the team had actually run it by hand —
+  `update.bat` picks up every existing checkout the next time it's run, not
+  just fresh ones from `setup.bat`. It no longer `pause`s on its own, so it
+  chains cleanly when called from either script.
 - **Auto-update notes** in `SETUP.md` Part 11 and the README, including the
   silent-schedule option for macOS / Linux.
 - **`plugins/team-updater/`** — the in-app update button ("dsh updates" under

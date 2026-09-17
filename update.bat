@@ -41,7 +41,7 @@ echo ============================================
 echo.
 
 REM ---------- 1. this repo ----------
-echo [1/3] Updating this repo...
+echo [1/4] Updating this repo...
 where git >nul 2>&1
 if errorlevel 1 goto :nogit
 git rev-parse --git-dir >nul 2>&1
@@ -83,7 +83,7 @@ if "%AFTER_PULL%"=="1" (
 echo.
 
 REM ---------- 2. dsh itself ----------
-echo [2/3] Updating dsh...
+echo [2/4] Updating dsh...
 if "%SKIP_DSH%"=="1" (
     echo   [INFO] Skipped ^(--skip-dsh^)
 ) else (
@@ -218,7 +218,7 @@ if defined PLUGIN_BRACKETS (
 echo.
 
 REM ---------- 3. the shared agent rules ----------
-echo [3/3] Rewriting the shared agent rules...
+echo [3/4] Rewriting the shared agent rules...
 if not exist "%SCRIPT_DIR%\agents.bat" (
     echo   [WARN] agents.bat is missing from this checkout - skipping
 ) else (
@@ -227,6 +227,20 @@ if not exist "%SCRIPT_DIR%\agents.bat" (
     REM update writes the core rules and says how to add roles instead.
     call "%SCRIPT_DIR%\agents.bat" --no-ask !ROLE_ARG!
     if errorlevel 1 echo   [WARN] Could not write the agent rules - see above
+)
+echo.
+
+REM ---------- 4. auto-update check ----------
+REM A machine that has been updating by hand (this script, run manually) has
+REM never necessarily run enable-autoupdate.bat - this closes that gap for
+REM every existing checkout, not just fresh ones from setup.bat.
+echo [4/4] Enabling the login-time update check...
+if not exist "%SCRIPT_DIR%\enable-autoupdate.bat" (
+    echo   [WARN] enable-autoupdate.bat is missing from this checkout - skipping
+) else (
+    call "%SCRIPT_DIR%\enable-autoupdate.bat"
+    if errorlevel 1 echo   [WARN] Could not enable it - run enable-autoupdate.bat by hand
+    title dsh + Figma Update
 )
 
 echo.
