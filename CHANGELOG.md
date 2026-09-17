@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-09-17
+
 ### Added
 
 - **`check.bat` / `check.sh`** — fetch quietly and compare against the shared
