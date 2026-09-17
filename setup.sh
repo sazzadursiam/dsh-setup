@@ -116,11 +116,16 @@ ok "dsh installed"
 say ""
 
 # ---------- dsh plugins (update button, Figma MCP) ----------
-# The profile only exists once dsh has been started at least once, so on a fresh
-# machine this is a hint rather than a step. `dsh plugin ... add` appends each
-# bundle by itself, because the packages declare dsh.bundle.patch.
+# `dsh plugin ... add` appends each bundle by itself, because the packages
+# declare dsh.bundle.patch - but only once the web profile exists. Rather than
+# ask the user to run `dsh web` first and re-run this script, --dump-config
+# creates the profile as a side effect and exits immediately, no server or
+# browser involved.
 say "${BOLD}[+]${OFF} Adding dsh plugins (update button, Figma MCP)..."
 PLUGIN_LOG="${TMPDIR:-/tmp}/dsh-setup-plugin-add.log"
+if [ ! -d "${DSH_HOME:-$HOME/.dsh}/profiles/web" ]; then
+  dsh --profile web --dump-config >/dev/null 2>&1
+fi
 # pnpm resolves a `file:` spec as a filesystem path, and on Git Bash/MSYS
 # $SCRIPT_DIR is POSIX-style (/c/Users/...) - pnpm fails on that with
 # ERR_PNPM_LINKED_PKG_DIR_NOT_FOUND. cygpath -w gives it a path it accepts;
@@ -134,7 +139,7 @@ case "$SCRIPT_DIR" in
     say  "        Move this checkout to a path without ( or ) and run this again." ;;
   *)
     if [ ! -d "${DSH_HOME:-$HOME/.dsh}/profiles/web" ]; then
-      warn "No web profile yet - run 'dsh web' once, then re-run this script"
+      warn "Could not create the web profile - run 'dsh web' once, then re-run this script"
     else
       # `dsh plugin` runs whatever pnpm is on PATH and does not ship one. Major
       # 12 is what this was tested with; its install script swaps in the native

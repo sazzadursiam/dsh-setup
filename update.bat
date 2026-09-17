@@ -129,6 +129,10 @@ REM the spec follows this checkout if it was moved. Adding them twice is a no-op
 echo [+] Checking dsh plugins (update button, Figma MCP)...
 set "DSH_PROFILE_DIR=%DSH_HOME%"
 if not defined DSH_PROFILE_DIR set "DSH_PROFILE_DIR=%USERPROFILE%\.dsh"
+REM --dump-config creates the web profile as a side effect and exits
+REM immediately (no server, no browser) - covers a machine that never ran
+REM "dsh web" yet.
+if not exist "%DSH_PROFILE_DIR%\profiles\web" call dsh --profile web --dump-config >nul 2>&1
 set "PLUGIN_LOG=%TEMP%\dsh-setup-plugin-add.log"
 REM dsh runs pnpm through a shell on Windows without quoting its arguments, so
 REM a checkout path with a space reaches pnpm cut in two ("X:/My" not found).
@@ -188,7 +192,7 @@ if defined PLUGIN_BRACKETS (
     where node >nul 2>&1
     if not errorlevel 1 node "%SCRIPT_DIR%\plugins\figma-bridge\lib\pin.js"
 ) else (
-    echo   [WARN] No web profile yet - run "dsh web" once, then re-run this script
+    echo   [WARN] Could not create the web profile - run "dsh web" once, then re-run this script
 )
 echo.
 

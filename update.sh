@@ -112,6 +112,11 @@ say ""
 # the spec follows this checkout if it was moved. Adding them twice is a no-op.
 say "${BOLD}[+]${OFF} Checking dsh plugins (update button, Figma MCP)..."
 PLUGIN_LOG="${TMPDIR:-/tmp}/dsh-setup-plugin-add.log"
+# --dump-config creates the web profile as a side effect and exits immediately
+# (no server, no browser) - covers a machine that never ran `dsh web` yet.
+if [ ! -d "${DSH_HOME:-$HOME/.dsh}/profiles/web" ]; then
+  dsh --profile web --dump-config >/dev/null 2>&1
+fi
 # pnpm resolves a `file:` spec as a filesystem path, and on Git Bash/MSYS
 # $SCRIPT_DIR is POSIX-style (/c/Users/...) - pnpm fails on that with
 # ERR_PNPM_LINKED_PKG_DIR_NOT_FOUND. cygpath -w gives it a path it accepts;
@@ -125,7 +130,7 @@ case "$SCRIPT_DIR" in
     hint "Move this checkout to a path without ( or ) and run this again." ;;
   *)
     if [ ! -d "${DSH_HOME:-$HOME/.dsh}/profiles/web" ]; then
-      warn "No web profile yet - run 'dsh web' once, then re-run this script"
+      warn "Could not create the web profile - run 'dsh web' once, then re-run this script"
     else
       # `dsh plugin` runs whatever pnpm is on PATH and does not ship one. Major
       # 12 is what this was tested with; its install script swaps in the native

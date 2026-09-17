@@ -37,6 +37,13 @@
   end-to-end on a real machine. Both scripts now convert the path with
   `cygpath -w` first when it is available (Windows only; macOS/Linux use the
   POSIX path unchanged, since it already works there).
+- **A fresh machine needed `setup` run twice.** `dsh plugin add` needs the web
+  profile to already exist, which previously meant: run `setup`, get a "no web
+  profile yet" warning and no plugins added, run `dsh web` once by hand, then
+  run `setup` again. `setup` and `update` now run
+  `dsh --profile web --dump-config` first when the profile is missing - it
+  creates the profile as a side effect and exits immediately, with no server
+  or browser involved - so a single run adds both plugins on a first install.
 
 ### Changed
 

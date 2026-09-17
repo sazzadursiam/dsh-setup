@@ -84,12 +84,15 @@ if errorlevel 1 goto :failed
 echo.
 
 REM ---------- dsh plugins (update button, Figma MCP) ----------
-REM The profile only exists once dsh has been started at least once, so on a
-REM fresh machine this is a hint rather than a step. `dsh plugin ... add`
-REM appends each bundle by itself, because the packages declare dsh.bundle.patch.
+REM `dsh plugin ... add` appends each bundle by itself, because the packages
+REM declare dsh.bundle.patch - but only once the web profile exists. Rather
+REM than ask the user to run "dsh web" first and re-run this script,
+REM --dump-config creates the profile as a side effect and exits immediately,
+REM no server or browser involved.
 echo [+] Adding dsh plugins (update button, Figma MCP)...
 set "DSH_PROFILE_DIR=%DSH_HOME%"
 if not defined DSH_PROFILE_DIR set "DSH_PROFILE_DIR=%USERPROFILE%\.dsh"
+if not exist "%DSH_PROFILE_DIR%\profiles\web" call dsh --profile web --dump-config >nul 2>&1
 set "REPO_DIR=%~dp0"
 set "PLUGIN_LOG=%TEMP%\dsh-setup-plugin-add.log"
 REM dsh runs pnpm through a shell on Windows without quoting its arguments, so
@@ -146,7 +149,7 @@ if defined PLUGIN_BRACKETS (
         echo   [ OK ] figma-bridge added
     )
 ) else (
-    echo   [WARN] No web profile yet - run "dsh web" once, then re-run this script
+    echo   [WARN] Could not create the web profile - run "dsh web" once, then re-run this script
 )
 echo.
 
