@@ -16,6 +16,8 @@ window.__ModuleLoader__.load({
 		const STATUS_URL = "/team-updater/status";
 		const APPLY_URL = "/team-updater/apply";
 		const LOG_URL = "/team-updater/log";
+		const FIGMA_STATUS_URL = "/team-updater/figma-status";
+		const FIGMA_INSTALL_URL = "/team-updater/figma-install";
 
 		const styles = {
 			row: {
@@ -195,12 +197,88 @@ window.__ModuleLoader__.load({
 			return h("div", { style: { display: "flex", flexDirection: "column", width: "100%" }, "data-team-updater": phase }, rows);
 		}
 
+		function FigmaInstallRow() {
+			const [phase, setPhase] = useState("checking");
+			const [status, setStatus] = useState(null);
+			const [message, setMessage] = useState(null);
+			const mounted = useRef(true);
+
+			useEffect(() => () => {
+				mounted.current = false;
+			}, []);
+
+			const check = useCallback(async () => {
+				setPhase("checking");
+				try {
+					const next = await request(FIGMA_STATUS_URL);
+					if (!mounted.current) return;
+					setStatus(next);
+					setPhase(next.installed ? "hidden" : "ready");
+				} catch (error) {
+					if (!mounted.current) return;
+					setPhase("error");
+					setMessage(error instanceof Error ? error.message : String(error));
+				}
+			}, []);
+
+			useEffect(() => {
+				check();
+			}, [check]);
+
+			const install = useCallback(async () => {
+				setPhase("installing");
+				setMessage(null);
+				try {
+					await request(FIGMA_INSTALL_URL, {});
+					if (!mounted.current) return;
+					setPhase("installed");
+					setMessage("Installed — restart dsh (Ctrl+C, then dsh web again), then set your Figma token under Settings > General.");
+				} catch (error) {
+					if (!mounted.current) return;
+					setPhase("error");
+					setMessage(error instanceof Error ? error.message : String(error));
+				}
+			}, []);
+
+			if (phase === "hidden" || phase === "checking") return null;
+
+			const busy = phase === "installing";
+			const button = (label, onClick, extra) => h("button", {
+				type: "button",
+				style: { ...styles.button, ...(busy ? styles.disabled : {}), ...extra },
+				disabled: busy,
+				onClick
+			}, label);
+
+			const parts = [];
+			parts.push(h("div", { key: "text", style: styles.text }, [
+				h("div", { key: "title", style: styles.title }, "Figma integration"),
+				h("div", { key: "meta", style: styles.meta }, phase === "error"
+					? `check failed: ${message}`
+					: phase === "installed" ? message : "Not installed — adds a Figma MCP server and a Settings token row.")
+			]));
+			const actions = [];
+			if (phase !== "installed") actions.push(button(busy ? "Installing…" : "Add Figma integration", install, styles.primary));
+			if (status?.command && phase !== "installed") actions.push(button("Copy command", async () => {
+				try {
+					await navigator.clipboard.writeText(status.command);
+					if (mounted.current) setMessage(`copied: ${status.command}`);
+				} catch {
+					if (mounted.current) setMessage(status.command);
+				}
+			}));
+			parts.push(h("div", { key: "actions", style: styles.actions }, actions));
+			return h("div", { style: styles.row, "data-figma-install": phase }, parts);
+		}
+
 		/** Required service: the UI slot registry. */
 		const inject = ["slots"];
 
 		/**
-		 * Register the updater row inside the General settings section — a
-		 * single preference row, so no settings page of its own is needed.
+		 * Register the updater row and the Figma-install row inside the General
+		 * settings section — separate rows with separate state machines, since
+		 * dsh-version status and figma-bridge-installed status are unrelated and
+		 * one's busy state should never disable the other's button.
 		 * @param ctx - client root context.
 		 */
 		function apply(ctx) {
@@ -209,6 +287,11 @@ window.__ModuleLoader__.load({
 				id: "team-updater",
 				order: 500
 			}, UpdaterRow));
+			ctx.slots.inject("settings.general.item", () => ctx.slots.register({
+				name: "settings.general.item",
+				id: "team-updater-figma",
+				order: 510
+			}, FigmaInstallRow));
 		}
 
 		exports.apply = apply;

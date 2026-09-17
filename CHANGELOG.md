@@ -30,6 +30,18 @@
   `mcp-figma` entry); restart dsh afterward to use it, since that file is only
   read at boot. Setting the token as a real environment variable still works
   exactly as before — `verify` accepts either.
+- **Figma integration is now opt-in.** `setup`/`setup.bat` ask once (default:
+  no, `--with-figma` skips the prompt) instead of always installing
+  `plugins/figma-bridge/` alongside `plugins/team-updater/` — a coding-only
+  machine no longer carries an extra MCP server and 125 unused tools. Skipped
+  it? Add it later with no terminal: `dsh web` → Settings → General → "Add
+  Figma integration". `update`/`update.bat` never install it retroactively on
+  an opted-out machine, but a legacy hand-copied config (pre-plugin) is still
+  detected and migrated correctly regardless of this change — the gate that
+  decides whether to keep `figma-bridge` in the update loop is captured
+  *before* `plugins/figma-bridge/lib/migrate.js` runs, since that script
+  deletes the very evidence (`serverName: figma` in the profile's own
+  `cordis.patch.yml`) the gate would otherwise need to see.
 
 ### Fixed
 

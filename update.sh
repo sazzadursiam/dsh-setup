@@ -139,10 +139,24 @@ case "$SCRIPT_DIR" in
         info "pnpm not found - installing it, dsh plugins need it..."
         npm install -g --allow-scripts=pnpm pnpm@12 || warn "pnpm install failed - see the npm output above"
       fi
+      # Figma-bridge is opt-in (setup.sh may have skipped it). Whether to keep
+      # it in the update loop is decided HERE, before migrate.js runs below -
+      # migrate.js deletes the profile's own legacy "serverName: figma" entry
+      # once it migrates it, so deciding after that call would find the entry
+      # already gone and wrongly conclude this machine never had Figma, even
+      # though it just needed migrating. Once captured, this value is not
+      # re-derived.
+      FIGMA_INCLUDE=0
+      PROFILE_PKG="${DSH_HOME:-$HOME/.dsh}/profiles/web/package.json"
+      PROFILE_CFG="${DSH_HOME:-$HOME/.dsh}/profiles/web/cordis.patch.yml"
+      if [ -f "$PROFILE_PKG" ] && grep -q '"dsh-figma-bridge"' "$PROFILE_PKG"; then FIGMA_INCLUDE=1; fi
+      if [ -f "$PROFILE_CFG" ] && grep -q 'serverName:[[:space:]]*figma' "$PROFILE_CFG"; then FIGMA_INCLUDE=1; fi
       # A hand-copied profile from before figma-bridge existed would otherwise
       # end up with two "serverName: figma" rows once the plugin is added.
       command -v node >/dev/null 2>&1 && node "$SCRIPT_DIR/plugins/figma-bridge/lib/migrate.js"
-      for plugin in team-updater figma-bridge; do
+      PLUGINS_TO_UPDATE="team-updater"
+      [ "$FIGMA_INCLUDE" = 1 ] && PLUGINS_TO_UPDATE="$PLUGINS_TO_UPDATE figma-bridge"
+      for plugin in $PLUGINS_TO_UPDATE; do
         if dsh plugin --profile web add "file:$PLUGIN_DIR/plugins/$plugin" >"$PLUGIN_LOG" 2>&1; then
           ok "$plugin present"
         else
@@ -154,7 +168,9 @@ case "$SCRIPT_DIR" in
       done
       # dsh plugin add installs a *copy* of figma-bridge, not a link, so a
       # version bump in this checkout still needs carrying into that copy.
-      command -v node >/dev/null 2>&1 && node "$SCRIPT_DIR/plugins/figma-bridge/lib/pin.js"
+      if [ "$FIGMA_INCLUDE" = 1 ]; then
+        command -v node >/dev/null 2>&1 && node "$SCRIPT_DIR/plugins/figma-bridge/lib/pin.js"
+      fi
     fi ;;
 esac
 say ""

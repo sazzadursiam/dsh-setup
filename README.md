@@ -46,13 +46,15 @@ reads or writes project folders. Spaces in the path are fine. One limit: keep
 `(` and `)` out of the checkout's path. pnpm cannot install the dsh plugins
 from such a folder, so `setup` and `update` skip that step and say so.
 
-The script installs Node.js, Git and dsh. It prints the remaining manual steps when it finishes.
+The script installs Node.js, Git and dsh. It asks once whether to also set up Figma integration (default: no — just dsh and coding tools if you skip it) before printing the remaining manual steps.
 
 On Windows, if the script installs Node or Git, it stops and asks you to reopen the terminal — Windows only picks up new PATH entries in a fresh one.
 
+**Only want dsh, no Figma?** Press Enter at that prompt (or don't pass `--with-figma`) and it's skipped — no MCP server, no extra tools. Add it later any time from `dsh web` → Settings → General → "Add Figma integration", no terminal needed.
+
 ## Manual steps
 
-1. **Run `dsh web`**, then set your Figma token under Settings → General → "Figma token" (no terminal needed — restart dsh after saving). Setting it as an environment variable instead still works too (see `.env.example`).
+1. **Run `dsh web`**, then set your Figma token under Settings → General → "Figma token" (no terminal needed — restart dsh after saving). Setting it as an environment variable instead still works too (see `.env.example`). If you skipped Figma during setup, click "Add Figma integration" first.
 2. **Add your Anthropic API key** under Settings → Models
 3. **Import the bridge plugin** into Figma Desktop
 
@@ -109,8 +111,10 @@ file: the global file is per-machine and does not travel with a clone.
 ## Updating
 
 One command pulls this repo, updates dsh with the right `--allow-scripts`
-allowlist, moves your Figma MCP to the version pinned in
-`plugins/figma-bridge/cordis.patch.yml`, and rewrites your agent rules:
+allowlist, moves your Figma MCP (if you installed it) to the version pinned in
+`plugins/figma-bridge/cordis.patch.yml`, and rewrites your agent rules. If you
+skipped Figma during setup, update leaves it skipped — it never installs it
+for you; use the "Add Figma integration" button in Settings for that:
 
 ```
 update.bat          # Windows

@@ -2,6 +2,10 @@
 setlocal enabledelayedexpansion
 title dsh + Figma Setup
 
+set "WITH_FIGMA=0"
+set "ARGS=%*"
+if defined ARGS if not "!ARGS!"=="!ARGS:--with-figma=!" set "WITH_FIGMA=1"
+
 echo.
 echo ============================================
 echo   dsh + Figma - Setup
@@ -83,6 +87,22 @@ call npm install -g --allow-scripts=%DSH_ALLOW% %DSH_SPEC%
 if errorlevel 1 goto :failed
 echo.
 
+REM ---------- Figma integration (opt-in) ----------
+set "INSTALL_FIGMA=0"
+if "%WITH_FIGMA%"=="1" (
+    set "INSTALL_FIGMA=1"
+) else (
+    echo [+] Figma integration
+    echo     Adds a Figma MCP server ^(125 extra tools^) and a Settings token row.
+    echo     Skip if you only do coding work - add it later from Settings -^> General
+    echo     ^("Add Figma integration" row^), no terminal needed.
+    set "FIGMA_ANS="
+    set /p "FIGMA_ANS=    Install Figma integration now? [y/N] "
+    if /i "!FIGMA_ANS!"=="Y" set "INSTALL_FIGMA=1"
+    if /i "!FIGMA_ANS!"=="YES" set "INSTALL_FIGMA=1"
+    echo.
+)
+
 REM ---------- dsh plugins (update button, Figma MCP) ----------
 REM `dsh plugin ... add` appends each bundle by itself, because the packages
 REM declare dsh.bundle.patch - but only once the web profile exists. Rather
@@ -139,14 +159,18 @@ if defined PLUGIN_BRACKETS (
     ) else (
         echo   [ OK ] team-updater added
     )
-    call dsh plugin --profile web add %FIGMA_ARG% > "%PLUGIN_LOG%" 2>&1
-    if errorlevel 1 (
-        echo   [WARN] Could not add figma-bridge. pnpm said:
-        type "%PLUGIN_LOG%"
-        echo          Run this by hand once the cause is fixed:
-        echo          dsh plugin --profile web add %FIGMA_ARG%
+    if "%INSTALL_FIGMA%"=="1" (
+        call dsh plugin --profile web add %FIGMA_ARG% > "%PLUGIN_LOG%" 2>&1
+        if errorlevel 1 (
+            echo   [WARN] Could not add figma-bridge. pnpm said:
+            type "%PLUGIN_LOG%"
+            echo          Run this by hand once the cause is fixed:
+            echo          dsh plugin --profile web add %FIGMA_ARG%
+        ) else (
+            echo   [ OK ] figma-bridge added
+        )
     ) else (
-        echo   [ OK ] figma-bridge added
+        echo   [INFO] Figma integration not installed - skipped ^(opted out^)
     )
 ) else (
     echo   [WARN] Could not create the web profile - run "dsh web" once, then re-run this script
@@ -171,26 +195,34 @@ echo ============================================
 echo.
 echo Manual steps left - see SETUP.md for details:
 echo.
-echo  1. Set your Figma token (get it from figma.com - Settings - Security):
-echo        Run dsh web, then Settings -^> General -^> "Figma token" - paste it there.
-echo        ^(No terminal needed for this; restart dsh after saving.^)
-echo     Or by hand: setx FIGMA_ACCESS_TOKEN "figd_your_token"
-echo                 setx ENABLE_MCP_APPS true
-echo                 Then CLOSE this window and open a new one.
+if "%INSTALL_FIGMA%"=="1" (
+    echo  1. Set your Figma token ^(get it from figma.com - Settings - Security^):
+    echo        Run dsh web, then Settings -^> General -^> "Figma token" - paste it there.
+    echo        ^(No terminal needed for this; restart dsh after saving.^)
+    echo     Or by hand: setx FIGMA_ACCESS_TOKEN "figd_your_token"
+    echo                 setx ENABLE_MCP_APPS true
+    echo                 Then CLOSE this window and open a new one.
+) else (
+    echo  Figma integration was skipped. Add it later from Settings -^> General
+    echo  ^("Add Figma integration" row^), or run:
+    echo  dsh plugin --profile web add "file:%REPO_DIR%plugins\figma-bridge"
+)
 echo.
 echo  2. Run:  dsh web
 echo     Open: http://127.0.0.1:3080
 echo     Settings - Models - add your Anthropic API key
 echo     (console.anthropic.com)
 echo.
-echo  3. Open Figma Desktop, press Ctrl+/ , type: import
-echo     Choose "Import plugin from manifest..."
-echo     File: %USERPROFILE%\.figma-console-mcp\plugin\manifest.json
-echo     (The folder appears only AFTER dsh has started the MCP server once.)
-echo.
-echo  4. Run the "Figma Desktop Bridge" plugin in your Figma file.
-echo     Wait for the green "Connected" status.
-echo.
+if "%INSTALL_FIGMA%"=="1" (
+    echo  3. Open Figma Desktop, press Ctrl+/ , type: import
+    echo     Choose "Import plugin from manifest..."
+    echo     File: %USERPROFILE%\.figma-console-mcp\plugin\manifest.json
+    echo     ^(The folder appears only AFTER dsh has started the MCP server once.^)
+    echo.
+    echo  4. Run the "Figma Desktop Bridge" plugin in your Figma file.
+    echo     Wait for the green "Connected" status.
+    echo.
+)
 echo  The shared agent rules are already installed at %USERPROFILE%\.dsh\AGENTS.md
 echo  and apply to every project. Per-project rules go in that project's own
 echo  AGENTS.md - see templates\project.example.md.

@@ -1,12 +1,14 @@
 /**
  * dsh-team-updater — host half.
  *
- * Ships three exact routes on the web GUI's own origin and a browser row that
- * calls them, so a dsh install can be updated from its own Settings panel:
+ * Ships routes on the web GUI's own origin and a browser row that calls them,
+ * so a dsh install can be updated from its own Settings panel:
  *
- *   GET  /team-updater/status  → installed vs registry version, update flag
- *   GET  /team-updater/log     → tail of the update runner's log file
- *   POST /team-updater/apply   → stage the update and hand off to the runner
+ *   GET  /team-updater/status        → installed vs registry version, update flag
+ *   GET  /team-updater/log           → tail of the update runner's log file
+ *   POST /team-updater/apply         → stage the update and hand off to the runner
+ *   GET  /team-updater/figma-status  → whether plugins/figma-bridge is installed
+ *   POST /team-updater/figma-install → install it (opt-in, added later from Settings)
  *
  * Why staging instead of `npm install -g` in place: the running dsh process
  * keeps native addons (node-pty, koffi, sharp) mapped, and Windows refuses to
@@ -14,17 +16,25 @@
  * this process to exit, installs the requested version, then relaunches dsh
  * with the same arguments. Nothing in the running process is replaced.
  *
+ * figma-install does not need any of that: adding a new plugin bundle to the
+ * profile's node_modules does not touch the running dsh process at all (only
+ * loading it does, which happens on the next boot) - so it runs `dsh plugin
+ * add` synchronously in this request and just reports that a restart is
+ * needed, no detached runner.
+ *
  * The routes carry no authorization of their own; every request is first put
  * through the Connection Host/Origin fence and browser authentication, the
  * same policy the `/api` bridge uses.
  * @module dsh-team-updater
  */
 import { spawn } from 'node:child_process';
-import { mkdir, readFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { access, mkdir, readFile } from 'node:fs/promises';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkoutRoots } from './checkout.js';
 import { readAllowScripts, readPin } from './pin.js';
+import { run } from './proc.js';
 import { isNewer, isVersionLike } from './version.js';
 
 /** Stable Cordis plugin name. */
@@ -42,6 +52,10 @@ const CHECK_TTL_MS = 30_000;
 const REGISTRY_TIMEOUT_MS = 10_000;
 const LOG_TAIL_BYTES = 8_192;
 const BODY_LIMIT_BYTES = 64 * 1024;
+/** The package figma-install adds; matches plugins/figma-bridge/package.json's "name". */
+const FIGMA_PACKAGE = 'dsh-figma-bridge';
+/** dsh plugin add shells out to pnpm, which may need to resolve/build a native module. */
+const FIGMA_INSTALL_TIMEOUT_MS = 10 * 60 * 1000;
 
 /** Turn plugin config into the effective options, ignoring anything malformed. */
 function resolveOptions(config) {
@@ -206,6 +220,62 @@ async function readJsonBody(request) {
 	}
 }
 
+async function pathExists(path) {
+	try {
+		await access(path);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/** $DSH_HOME/profiles/web - where `dsh plugin add` installs bundles. */
+function webProfileDir() {
+	return join(process.env.DSH_HOME || join(homedir(), '.dsh'), 'profiles', 'web');
+}
+
+/**
+ * Whether the profile already depends on dsh-figma-bridge - i.e. it is
+ * plugin-managed, the same check plugins/figma-bridge/lib/migrate.js uses.
+ * Duplicated rather than imported: team-updater and figma-bridge are each
+ * independently add/removable via `dsh plugin add`, so neither reaches into
+ * the other's internals (authorize()/writeJson() are duplicated the same way
+ * in plugins/figma-bridge/lib/index.js).
+ */
+async function isFigmaBridgeInstalled() {
+	try {
+		const manifest = JSON.parse(await readFile(join(webProfileDir(), 'package.json'), 'utf8'));
+		return manifest?.dependencies?.[FIGMA_PACKAGE] !== undefined;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * The checkout root that actually contains plugins/figma-bridge, or null when
+ * none of the candidates do (the checkout may have moved or been deleted
+ * since this plugin was installed).
+ */
+async function findCheckoutRoot() {
+	for (const root of await checkoutRoots()) {
+		if (await pathExists(join(root, 'plugins', 'figma-bridge', 'package.json'))) return root;
+	}
+	return null;
+}
+
+/**
+ * Run `dsh` through the platform shell on Windows, for the same reason
+ * update-runner.mjs wraps npm: an npm-global install is a `.cmd` shim that
+ * spawn() cannot execute directly without a shell.
+ */
+function runDsh(args, cwd, timeout) {
+	if (process.platform === 'win32') {
+		const quoted = args.map((arg) => (/[\s"]/.test(arg) ? `"${arg.replace(/"/g, '""')}"` : arg)).join(' ');
+		return run(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', `dsh ${quoted}`], { cwd, timeout });
+	}
+	return run('dsh', args, { cwd, timeout });
+}
+
 /**
  * Stage an update: spawn the detached runner, which optionally quits this
  * process, waits for it to disappear, installs the version, and relaunches
@@ -362,6 +432,37 @@ function apply(ctx, config) {
 			command: manualCommand(version, current.allowScripts),
 			...started
 		});
+	});
+	route(`${ROUTE_BASE}/figma-status`, 'GET', async (_request, response) => {
+		const installed = await isFigmaBridgeInstalled();
+		const root = await findCheckoutRoot();
+		writeJson(response, 200, {
+			installed,
+			command: root !== null ? `dsh plugin --profile web add "file:${root}/plugins/figma-bridge"` : null
+		});
+	});
+	route(`${ROUTE_BASE}/figma-install`, 'POST', async (_request, response) => {
+		const root = await findCheckoutRoot();
+		if (root === null) {
+			writeJson(response, 404, { error: 'could not find the dsh-setup checkout this plugin was installed from - it may have moved or been deleted' });
+			return;
+		}
+		// pnpm uses brackets in lockfile keys and fails with "Mismatch parenthesis".
+		if (/[()]/.test(root)) {
+			writeJson(response, 409, { error: 'checkout path contains ( or ) - pnpm cannot install a plugin from it. Move the checkout and try again.' });
+			return;
+		}
+		const spec = `file:${root}/plugins/figma-bridge`;
+		const result = await runDsh(['plugin', '--profile', 'web', 'add', spec], root, FIGMA_INSTALL_TIMEOUT_MS);
+		if (result.code !== 0) {
+			writeJson(response, 502, {
+				error: `dsh plugin add failed (exit ${result.code ?? 'timeout'})`,
+				output: result.output,
+				command: `dsh plugin --profile web add "${spec}"`
+			});
+			return;
+		}
+		writeJson(response, 200, { ok: true, installed: true, restartNeeded: true });
 	});
 	if (typeof ctx.logger?.info === 'function') {
 		readPin(options.versionFile).then((pin) => ctx.logger.info(pin?.version

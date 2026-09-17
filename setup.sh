@@ -11,6 +11,14 @@ die()  { printf '\n%sSETUP FAILED%s\n\n%s\n\n' "$RED" "$OFF" "$*"; exit 1; }
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+WITH_FIGMA=0
+for arg in "$@"; do
+  case "$arg" in
+    --with-figma) WITH_FIGMA=1 ;;
+    *)            die "Unknown argument: $arg   (try --with-figma)" ;;
+  esac
+done
+
 # ---------- detect platform ----------
 OS="unknown"
 case "$(uname -s)" in
@@ -115,6 +123,25 @@ ok "dsh installed"
 
 say ""
 
+# ---------- Figma integration (opt-in) ----------
+INSTALL_FIGMA=0
+if [ "$WITH_FIGMA" = 1 ]; then
+  INSTALL_FIGMA=1
+else
+  say "${BOLD}[+]${OFF} Figma integration"
+  say "    Adds a Figma MCP server (125 extra tools) and a Settings token row."
+  say "    Skip if you only do coding work - add it later from Settings → General"
+  say "    (\"Add Figma integration\" row), no terminal needed."
+  if [ -t 0 ]; then
+    printf "    Install Figma integration now? [y/N] "
+    read -r FIGMA_ANS
+    case "$FIGMA_ANS" in y|Y|yes|YES) INSTALL_FIGMA=1 ;; esac
+  else
+    say "    Not an interactive terminal - skipping by default."
+  fi
+  say ""
+fi
+
 # ---------- dsh plugins (update button, Figma MCP) ----------
 # `dsh plugin ... add` appends each bundle by itself, because the packages
 # declare dsh.bundle.patch - but only once the web profile exists. Rather than
@@ -151,7 +178,9 @@ case "$SCRIPT_DIR" in
       # A hand-copied profile from before figma-bridge existed would otherwise
       # end up with two "serverName: figma" rows once the plugin is added.
       command -v node >/dev/null 2>&1 && node "$SCRIPT_DIR/plugins/figma-bridge/lib/migrate.js"
-      for plugin in team-updater figma-bridge; do
+      PLUGINS_TO_INSTALL="team-updater"
+      [ "$INSTALL_FIGMA" = 1 ] && PLUGINS_TO_INSTALL="$PLUGINS_TO_INSTALL figma-bridge"
+      for plugin in $PLUGINS_TO_INSTALL; do
         if dsh plugin --profile web add "file:$PLUGIN_DIR/plugins/$plugin" >"$PLUGIN_LOG" 2>&1; then
           ok "$plugin added"
         else
@@ -185,32 +214,40 @@ say "${BOLD}============================================${OFF}"
 say ""
 say "Manual steps left — see SETUP.md for detail:"
 say ""
-say "  1. Set your Figma token (figma.com → Settings → Security):"
-say "       Run ${BOLD}dsh web${OFF}, then Settings → General → \"Figma token\" — paste it there."
-say "       ${DIM}(No terminal needed for this; restart dsh after saving.)${OFF}"
-say "     Or by hand: ${BOLD}export FIGMA_ACCESS_TOKEN=\"figd_your_token\"${OFF}"
-say "                 ${BOLD}export ENABLE_MCP_APPS=true${OFF}"
-say "                 Add both to ~/.zshrc or ~/.bashrc so they persist."
+if [ "$INSTALL_FIGMA" = 1 ]; then
+  say "  1. Set your Figma token (figma.com → Settings → Security):"
+  say "       Run ${BOLD}dsh web${OFF}, then Settings → General → \"Figma token\" — paste it there."
+  say "       ${DIM}(No terminal needed for this; restart dsh after saving.)${OFF}"
+  say "     Or by hand: ${BOLD}export FIGMA_ACCESS_TOKEN=\"figd_your_token\"${OFF}"
+  say "                 ${BOLD}export ENABLE_MCP_APPS=true${OFF}"
+  say "                 Add both to ~/.zshrc or ~/.bashrc so they persist."
+else
+  say "  ${DIM}Figma integration was skipped. Add it later from Settings → General${OFF}"
+  say "  ${DIM}(\"Add Figma integration\" row), or run:${OFF}"
+  say "  ${DIM}dsh plugin --profile web add \"file:$SCRIPT_DIR/plugins/figma-bridge\"${OFF}"
+fi
 say ""
 say "  2. Run:  ${BOLD}dsh web${OFF}"
 say "     Open: http://127.0.0.1:3080"
 say "     Settings → Models → add your Anthropic API key"
 say "     ${DIM}console.anthropic.com${OFF}"
 say ""
-if [ "$OS" = "mac" ]; then
-  say "  3. Open Figma Desktop, press ${BOLD}Cmd+/${OFF} , type: import"
-  say "     Choose \"Import plugin from manifest…\""
-  say "     File: ~/.figma-console-mcp/plugin/manifest.json"
-  say "     ${DIM}(Folder appears only AFTER dsh has started the MCP server once.)${OFF}"
+if [ "$INSTALL_FIGMA" = 1 ]; then
+  if [ "$OS" = "mac" ]; then
+    say "  3. Open Figma Desktop, press ${BOLD}Cmd+/${OFF} , type: import"
+    say "     Choose \"Import plugin from manifest…\""
+    say "     File: ~/.figma-console-mcp/plugin/manifest.json"
+    say "     ${DIM}(Folder appears only AFTER dsh has started the MCP server once.)${OFF}"
+    say ""
+    say "  4. Run the \"Figma Desktop Bridge\" plugin in your Figma file."
+    say "     Wait for the green \"Connected\" status."
+  else
+    say "  3. ${YEL}Figma write access is not available on Linux.${OFF}"
+    say "     Read-only Figma tools still work via your PAT."
+    say "     For design creation, use a Windows or Mac machine."
+  fi
   say ""
-  say "  4. Run the \"Figma Desktop Bridge\" plugin in your Figma file."
-  say "     Wait for the green \"Connected\" status."
-else
-  say "  3. ${YEL}Figma write access is not available on Linux.${OFF}"
-  say "     Read-only Figma tools still work via your PAT."
-  say "     For design creation, use a Windows or Mac machine."
 fi
-say ""
 say "  ${DIM}The shared agent rules are already installed at ~/.dsh/AGENTS.md and${OFF}"
 say "  ${DIM}apply to every project. Per-project rules go in that project's own${OFF}"
 say "  ${DIM}AGENTS.md - see templates/project.example.md.${OFF}"

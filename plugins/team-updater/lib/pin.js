@@ -9,13 +9,12 @@
  * @module dsh-team-updater/pin
  */
 import { readFile } from 'node:fs/promises';
-import { dirname, isAbsolute, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import { checkoutRoots, PACKAGE_ROOT } from './checkout.js';
 import { isVersionLike } from './version.js';
 
 const PIN_FILE = 'DSH_VERSION';
 const ALLOW_FILE = 'DSH_ALLOW_SCRIPTS';
-const PLUGIN_PACKAGE = 'dsh-team-updater';
 /**
  * Used only when no DSH_ALLOW_SCRIPTS can be found — a plugin copy installed
  * from outside any checkout. tests/check.mjs fails when it drifts from the file.
@@ -28,8 +27,6 @@ const DEFAULT_ALLOW_SCRIPTS = '@deepseek-ai/dsh-subprocess-local,koffi,node-pty,
 const PACKAGE_NAME = '(?:@[a-z0-9][a-z0-9._~-]*\\/)?[a-z0-9][a-z0-9._~-]*';
 const ALLOW_LIST = new RegExp(`^${PACKAGE_NAME}(?:,${PACKAGE_NAME})*$`, 'i');
 
-const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-
 async function readText(path) {
 	try {
 		return await readFile(path, 'utf8');
@@ -38,32 +35,9 @@ async function readText(path) {
 	}
 }
 
-/**
- * Candidate locations for a checkout-root file, most specific first.
- *
- * The package root sits two levels below the directory that matters in both
- * layouts: `<checkout>/plugins/team-updater` and
- * `<profile>/node_modules/dsh-team-updater`. The profile copy is a real copy,
- * not a link, so from there the checkout is only reachable through the `file:`
- * spec the profile recorded when setup added the plugin.
- */
+/** Candidate locations for a checkout-root file, most specific first — see checkout.js. */
 async function candidates(packageRoot, fileName) {
-	const above = resolve(packageRoot, '..', '..');
-	const found = [resolve(above, fileName)];
-	const manifest = await readText(resolve(above, 'package.json'));
-	if (manifest !== null) {
-		try {
-			const spec = JSON.parse(manifest)?.dependencies?.[PLUGIN_PACKAGE];
-			if (typeof spec === 'string' && spec.startsWith('file:')) {
-				const source = spec.slice('file:'.length);
-				const plugin = isAbsolute(source) ? source : resolve(above, source);
-				found.push(resolve(plugin, '..', '..', fileName));
-			}
-		} catch {
-			/* not a readable profile manifest: only the checkout candidate applies */
-		}
-	}
-	return found;
+	return (await checkoutRoots(packageRoot)).map((root) => resolve(root, fileName));
 }
 
 /**

@@ -54,7 +54,12 @@
       "Read(//tmp/tstest/profiles/web/node_modules/**)",
       "Bash(powershell -NoProfile -Command \"Get-Process -Id 8672,15284 -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime\")",
       "Bash(powershell -NoProfile -Command \"Stop-Process -Id 8672,15284 -Force -ErrorAction SilentlyContinue\")",
-      "Bash(tasklist)"
+      "Bash(tasklist)",
+      "Bash(node --check plugins/team-updater/lib/checkout.js)",
+      "Bash(node --check plugins/team-updater/lib/pin.js)",
+      "Bash(node --check plugins/team-updater/lib/update-runner.mjs)",
+      "Bash(node --check plugins/team-updater/lib/proc.js)",
+      "Bash(node -e ' *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\AC\\AppData\\Local\\Temp\\claude\\c--Users-AC-Projects-dsh-setup\\eecc254e-39ef-4ccb-a3c3-b4b23fa40321\\scratchpad\\real_repo_test",

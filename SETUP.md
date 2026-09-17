@@ -183,7 +183,10 @@ echo $FIGMA_ACCESS_TOKEN
 
 ### Step 5: Add the Figma MCP plugin
 
-`setup.sh` / `update.sh` do this for you once the `web` profile exists. By hand:
+`setup.sh` asks once whether to install this (default: no) — say yes there, or
+skip and add it later from `dsh web` → Settings → General → "Add Figma
+integration", no terminal needed. `update.sh` never installs it for you if you
+skipped it; it only keeps an already-installed copy in sync. By hand:
 
 ```bash
 dsh plugin --profile web add "file:$PWD/plugins/figma-bridge"
@@ -361,10 +364,13 @@ The npx process inherits the system environment, so nothing extra needs to be wr
 
 ### Step 4: Config file
 
-If you use the team repo, the easy path — `setup.bat` / `setup.sh` and
-`update.bat` / `update.sh` add the Figma MCP server as a dsh plugin for you,
-once the `web` profile exists (`dsh web` has run at least once). By hand, from
-the repo root:
+If you use the team repo, `setup.bat` / `setup.sh` ask once whether to install
+this (default: no, so a coding-only machine does not carry an extra MCP
+server and 125 unused tools). Say yes there, or skip and add it later from
+`dsh web` → Settings → General → "Add Figma integration" — no terminal
+needed, `update.bat` / `update.sh` do not install it for you retroactively,
+they only keep an already-installed copy in sync. By hand, from the repo
+root:
 
 ```
 dsh plugin --profile web add "file:%CD%\plugins\figma-bridge"
@@ -670,9 +676,14 @@ To build the whole system from scratch, follow this order. Details for each item
 **dsh config**
 
 - [ ] `dsh web` → `http://127.0.0.1:3080` → Settings → Models → add the Anthropic key
+
+The rest of this checklist is for Figma integration — skip it if this machine
+only needs dsh for coding. Using `setup.bat` instead of building by hand, it
+asks about this for you and does the plugin-add step itself (default: no).
+
+- [ ] `dsh plugin --profile web add "file:%CD%\plugins\figma-bridge"` (Part 6 Step 4) — or, once dsh is running, Settings → General → "Add Figma integration"
 - [ ] Settings → General → "Figma token" → paste and save (or by hand: `setx FIGMA_ACCESS_TOKEN "figd_..."` and `setx ENABLE_MCP_APPS true`, then open a **new cmd**)
 - [ ] Restart dsh so it picks up the token
-- [ ] `dsh plugin --profile web add "file:%CD%\plugins\figma-bridge"` (Part 6 Step 4)
 - [ ] Restart dsh → `figma_get_status` works in the session
 
 **Figma bridge**

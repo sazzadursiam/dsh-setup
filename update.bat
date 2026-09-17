@@ -165,6 +165,23 @@ if defined PLUGIN_BRACKETS (
         echo          pnpm not found - installing it, dsh plugins need it...
         call npm install -g --allow-scripts=pnpm pnpm@12
     )
+    REM Figma-bridge is opt-in (setup.bat may have skipped it). Whether to
+    REM keep it in the update loop is decided HERE, before migrate.js runs
+    REM below - migrate.js deletes the profile's own legacy "serverName:
+    REM figma" entry once it migrates it, so deciding after that call would
+    REM find the entry already gone and wrongly conclude this machine never
+    REM had Figma, even though it just needed migrating. Once captured, this
+    REM value is not re-derived.
+    REM Delayed expansion (!VAR!) below, not %VAR% - these are set and read
+    REM inside the same parenthesized block, where %VAR% would resolve to its
+    REM value at parse time (empty/stale), not the value just set.
+    set "FIGMA_INCLUDE=0"
+    set "PROFILE_PKG=%DSH_PROFILE_DIR%\profiles\web\package.json"
+    set "PROFILE_CFG=%DSH_PROFILE_DIR%\profiles\web\cordis.patch.yml"
+    findstr /c:"\"dsh-figma-bridge\"" "!PROFILE_PKG!" >nul 2>&1
+    if not errorlevel 1 set "FIGMA_INCLUDE=1"
+    findstr /r /c:"serverName:[ ]*figma" "!PROFILE_CFG!" >nul 2>&1
+    if not errorlevel 1 set "FIGMA_INCLUDE=1"
     REM A hand-copied profile from before figma-bridge existed would otherwise
     REM end up with two "serverName: figma" rows once the plugin is added.
     where node >nul 2>&1
@@ -178,19 +195,23 @@ if defined PLUGIN_BRACKETS (
     ) else (
         echo   [ OK ] team-updater present - Settings ^> General
     )
-    call dsh plugin --profile web add %FIGMA_ARG% > "%PLUGIN_LOG%" 2>&1
-    if errorlevel 1 (
-        echo   [WARN] Could not add figma-bridge. pnpm said:
-        type "%PLUGIN_LOG%"
-        echo          Run this by hand once the cause is fixed:
-        echo          dsh plugin --profile web add %FIGMA_ARG%
+    if "!FIGMA_INCLUDE!"=="1" (
+        call dsh plugin --profile web add %FIGMA_ARG% > "%PLUGIN_LOG%" 2>&1
+        if errorlevel 1 (
+            echo   [WARN] Could not add figma-bridge. pnpm said:
+            type "%PLUGIN_LOG%"
+            echo          Run this by hand once the cause is fixed:
+            echo          dsh plugin --profile web add %FIGMA_ARG%
+        ) else (
+            echo   [ OK ] figma-bridge present
+        )
+        REM dsh plugin add installs a *copy* of figma-bridge, not a link, so
+        REM a version bump in this checkout still needs carrying into that copy.
+        where node >nul 2>&1
+        if not errorlevel 1 node "%SCRIPT_DIR%\plugins\figma-bridge\lib\pin.js"
     ) else (
-        echo   [ OK ] figma-bridge present
+        echo   [INFO] Figma integration not installed - skipped ^(opted out^)
     )
-    REM dsh plugin add installs a *copy* of figma-bridge, not a link, so a
-    REM version bump in this checkout still needs carrying into that copy.
-    where node >nul 2>&1
-    if not errorlevel 1 node "%SCRIPT_DIR%\plugins\figma-bridge\lib\pin.js"
 ) else (
     echo   [WARN] Could not create the web profile - run "dsh web" once, then re-run this script
 )

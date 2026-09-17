@@ -9,6 +9,7 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { checkoutRoots } from '../lib/checkout.js';
 import { DEFAULT_ALLOW_SCRIPTS, readAllowScripts, readPin } from '../lib/pin.js';
 import { isNewer, compareVersions } from '../lib/version.js';
 
@@ -72,6 +73,49 @@ try {
 	}
 } finally {
 	await rm(sandbox, { recursive: true, force: true });
+}
+
+// ── checkoutRoots(), the checkout-root resolution figma-install relies on ──
+// (extracted from pin.js's candidates() - pin.js's own coverage above proves
+// the extraction did not change candidate order or content.)
+const rootsSandbox = await mkdtemp(join(tmpdir(), 'team-updater-checkout-'));
+try {
+	const checkout = join(rootsSandbox, 'dsh-setup');
+	const inCheckout = join(checkout, 'plugins', 'team-updater');
+	await mkdir(inCheckout, { recursive: true });
+	await mkdir(join(checkout, 'plugins', 'figma-bridge'), { recursive: true });
+	await writeFile(join(checkout, 'plugins', 'figma-bridge', 'package.json'), '{}');
+
+	const rootsFromCheckout = await checkoutRoots(inCheckout);
+	check('checkout layout: first candidate is the checkout root', rootsFromCheckout[0], checkout);
+
+	const profile = join(rootsSandbox, 'profile');
+	const inProfile = join(profile, 'node_modules', 'dsh-team-updater');
+	await mkdir(inProfile, { recursive: true });
+	await writeFile(join(profile, 'package.json'), JSON.stringify({ dependencies: { 'dsh-team-updater': `file:${inCheckout}` } }));
+	const rootsFromProfile = await checkoutRoots(inProfile);
+	check('profile layout: a candidate via the file: spec is the checkout root', rootsFromProfile.includes(checkout), true);
+
+	// The same "candidates in order, first that verifies wins" pattern
+	// figma-install's findCheckoutRoot() uses - a stale/moved candidate must
+	// not be trusted just because it resolved to *some* path.
+	const findRoot = async (packageRoot) => {
+		for (const root of await checkoutRoots(packageRoot)) {
+			try {
+				await readFile(join(root, 'plugins', 'figma-bridge', 'package.json'), 'utf8');
+				return root;
+			} catch {
+				continue;
+			}
+		}
+		return null;
+	};
+	check('probing for plugins/figma-bridge/package.json finds the real checkout', await findRoot(inProfile), checkout);
+
+	await writeFile(join(profile, 'package.json'), JSON.stringify({ dependencies: { 'dsh-team-updater': `file:${join(rootsSandbox, 'gone', 'plugins', 'team-updater')}` } }));
+	check('a moved/deleted checkout is not falsely trusted', await findRoot(inProfile), null);
+} finally {
+	await rm(rootsSandbox, { recursive: true, force: true });
 }
 
 // ── the checkout this copy ships in ─────────────────────────────────────────
