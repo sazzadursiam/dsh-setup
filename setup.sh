@@ -121,6 +121,12 @@ say ""
 # bundle by itself, because the packages declare dsh.bundle.patch.
 say "${BOLD}[+]${OFF} Adding dsh plugins (update button, Figma MCP)..."
 PLUGIN_LOG="${TMPDIR:-/tmp}/dsh-setup-plugin-add.log"
+# pnpm resolves a `file:` spec as a filesystem path, and on Git Bash/MSYS
+# $SCRIPT_DIR is POSIX-style (/c/Users/...) - pnpm fails on that with
+# ERR_PNPM_LINKED_PKG_DIR_NOT_FOUND. cygpath -w gives it a path it accepts;
+# elsewhere (mac/linux) cygpath does not exist and $SCRIPT_DIR is used as-is.
+PLUGIN_DIR="$SCRIPT_DIR"
+command -v cygpath >/dev/null 2>&1 && PLUGIN_DIR="$(cygpath -w "$SCRIPT_DIR")"
 case "$SCRIPT_DIR" in
   # pnpm uses brackets in lockfile keys and fails with "Mismatch parenthesis".
   *'('*|*')'*)
@@ -141,13 +147,13 @@ case "$SCRIPT_DIR" in
       # end up with two "serverName: figma" rows once the plugin is added.
       command -v node >/dev/null 2>&1 && node "$SCRIPT_DIR/plugins/figma-bridge/lib/migrate.js"
       for plugin in team-updater figma-bridge; do
-        if dsh plugin --profile web add "file:$SCRIPT_DIR/plugins/$plugin" >"$PLUGIN_LOG" 2>&1; then
+        if dsh plugin --profile web add "file:$PLUGIN_DIR/plugins/$plugin" >"$PLUGIN_LOG" 2>&1; then
           ok "$plugin added"
         else
           warn "Could not add $plugin. pnpm said:"
           sed 's/^/        /' "$PLUGIN_LOG"
           say  "        Run this by hand once the cause is fixed:"
-          say  "        dsh plugin --profile web add \"file:$SCRIPT_DIR/plugins/$plugin\""
+          say  "        dsh plugin --profile web add \"file:$PLUGIN_DIR/plugins/$plugin\""
         fi
       done
     fi ;;

@@ -25,6 +25,19 @@
   `scripts/figma-pin.mjs` are removed; `update` migrates an existing
   hand-copied profile entry automatically before adding the plugin.
 
+### Fixed
+
+- **`dsh plugin --profile web add` failed on Git Bash / MSYS with
+  `ERR_PNPM_LINKED_PKG_DIR_NOT_FOUND`.** `setup.sh` and `update.sh` build the
+  `file:` spec from `$SCRIPT_DIR`, which Git Bash reports in POSIX form
+  (`/c/Users/...`) — pnpm resolves `file:` specs as filesystem paths and does
+  not accept that form on Windows. This silently broke `plugins/team-updater`'s
+  own install on any Windows machine using the `.sh` scripts under Git Bash,
+  not just the new `plugins/figma-bridge`; found while testing the latter
+  end-to-end on a real machine. Both scripts now convert the path with
+  `cygpath -w` first when it is available (Windows only; macOS/Linux use the
+  POSIX path unchanged, since it already works there).
+
 ### Changed
 
 - **The Figma MCP server is pinned to 1.40.0 instead of `@latest`.** With

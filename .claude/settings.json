@@ -35,7 +35,8 @@
       "Bash(command -v shellcheck)",
       "Bash(shellcheck /c/Users/AC/Projects/dsh-setup/setup.sh /c/Users/AC/Projects/dsh-setup/update.sh /c/Users/AC/Projects/dsh-setup/verify.sh /c/Users/AC/Projects/dsh-setup/tests/smoke.sh)",
       "Bash(echo \"exit: $?\")",
-      "PowerShell(cmd /c \"`\"C:\\\\Users\\\\AC\\\\Projects\\\\dsh-setup\\\\tests\\\\smoke.bat`\"\" 2>&1)"
+      "PowerShell(cmd /c \"`\"C:\\\\Users\\\\AC\\\\Projects\\\\dsh-setup\\\\tests\\\\smoke.bat`\"\" 2>&1)",
+      "Read(//c/Users/AC/.dsh/profiles/web/**)"
     ],
     "additionalDirectories": [
       "C:\\Users\\AC\\AppData\\Local\\Temp\\claude\\c--Users-AC-Projects-dsh-setup\\eecc254e-39ef-4ccb-a3c3-b4b23fa40321\\scratchpad\\real_repo_test"
