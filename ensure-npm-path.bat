@@ -17,6 +17,8 @@ REM Exit code: 0 = dsh is reachable, 1 = it is not and could not be fixed.
 REM
 REM No setlocal, on purpose: the PATH change has to reach the calling script.
 REM Callers use `call`; every variable set here is cleared before returning.
+REM DSH_TEST_ENV_KEY points the persistent write at a scratch registry key
+REM instead of HKCU\Environment - used only by tests\smoke.bat, never set it.
 REM The persistent write goes to the registry directly as REG_EXPAND_SZ.
 REM [Environment]::SetEnvironmentVariable would store PATH as REG_SZ and
 REM freeze every %VAR% in it to its current value.
@@ -34,7 +36,7 @@ where dsh >nul 2>&1
 if errorlevel 1 goto :cannot
 
 echo   [INFO] dsh was not on PATH - added %DSH_NPM_BIN% to it.
-set "DSH_PS=$d=$env:DSH_NPM_BIN.TrimEnd('\'); $k=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment',$true); $p=[string]$k.GetValue('Path','',[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames); $have=@($p -split ';' | Where-Object {$_} | ForEach-Object {[Environment]::ExpandEnvironmentVariables($_).TrimEnd('\')}); if ($have -notcontains $d) { $k.SetValue('Path',(($p.TrimEnd(';')+';'+$env:DSH_NPM_BIN).TrimStart(';')),[Microsoft.Win32.RegistryValueKind]::ExpandString); [Environment]::SetEnvironmentVariable('DSH_PATH_REFRESH',$null,'User') }; $k.Close()"
+set "DSH_PS=$d=$env:DSH_NPM_BIN.TrimEnd('\'); $kn='Environment'; if ($env:DSH_TEST_ENV_KEY) { $kn=$env:DSH_TEST_ENV_KEY }; $k=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($kn,$true); $p=[string]$k.GetValue('Path','',[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames); $have=@($p -split ';' | Where-Object {$_} | ForEach-Object {[Environment]::ExpandEnvironmentVariables($_).TrimEnd('\')}); if ($have -notcontains $d) { $k.SetValue('Path',(($p.TrimEnd(';')+';'+$env:DSH_NPM_BIN).TrimStart(';')),[Microsoft.Win32.RegistryValueKind]::ExpandString); [Environment]::SetEnvironmentVariable('DSH_PATH_REFRESH',$null,'User') }; $k.Close()"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "%DSH_PS%" >nul 2>&1
 if errorlevel 1 (
     echo   [WARN] Could not save it for new terminals. Add that folder to your

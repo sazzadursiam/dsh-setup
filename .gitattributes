@@ -22,3 +22,4 @@ DSH_ALLOW_SCRIPTS text eol=lf
 .env.example text eol=lf
 .gitignore   text eol=lf
 .gitattributes text eol=lf
+.editorconfig text eol=lf

@@ -1,0 +1,31 @@
+# Keeps editors on the conventions this repo already follows. .gitattributes
+# normalises line endings inside git; this makes the editor write them right in
+# the first place. CI fails a .bat that is not CRLF.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# cmd.exe misparses labels and goto targets in LF-only batch files.
+[*.{bat,cmd}]
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+
+[*.sh]
+indent_style = space
+indent_size = 2
+
+[*.{js,mjs}]
+indent_style = tab
+
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Two trailing spaces are a line break in Markdown.
+[*.md]
+trim_trailing_whitespace = false

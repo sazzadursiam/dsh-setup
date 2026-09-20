@@ -33,6 +33,11 @@ jobs:
             exit 1
           fi
 
+      - name: batch-file jumps must resolve
+        # cmd.exe has no `bash -n`. A goto or call to a label that was renamed or
+        # deleted only fails when that path runs - on a fresh machine, for setup.bat.
+        run: node tests/bat-labels.mjs
+
   version:
     name: VERSION matches CHANGELOG
     runs-on: ubuntu-latest

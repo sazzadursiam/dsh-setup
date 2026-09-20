@@ -36,7 +36,7 @@ ones for your platform before you push.
 
 ```bash
 # macOS / Linux
-./tests/smoke.sh                                  # agents.sh + verify.sh
+./tests/smoke.sh                                  # agents, verify, check, bash -n on every script
 git ls-files '*.sh' | xargs shellcheck            # lint the shell scripts
 node plugins/team-updater/tests/check.mjs
 node plugins/figma-bridge/tests/check.mjs
@@ -44,14 +44,18 @@ node plugins/figma-bridge/tests/check.mjs
 
 ```
 :: Windows — Command Prompt
-tests\smoke.bat
+tests\smoke.bat                                   :: agents, verify, check, ensure-npm-path
+node tests\bat-labels.mjs                          :: every goto/call in a .bat has its label
 node plugins\team-updater\tests\check.mjs
 node plugins\figma-bridge\tests\check.mjs
 ```
 
 The smoke tests run against a throwaway `HOME`, so they never read or write your
-real `~/.dsh`. They are not a substitute for running `setup` / `update` for real
-when you change those.
+real `~/.dsh`. They do not run `setup` or `update`, which install software: those
+get only a parse check (`bash -n`, `tests/bat-labels.mjs`), so when you change one,
+run it for real on a spare machine or a fresh user account. `ensure-npm-path.bat`
+writes to a scratch registry key through `DSH_TEST_ENV_KEY`, and `smoke.bat`
+fails if your real user PATH changes — keep that hook working when you touch it.
 
 ## Conventions worth knowing
 
@@ -75,8 +79,16 @@ when you change those.
 Maintainer only. A release commit moves the `[Unreleased]` entries under a new
 version heading in `CHANGELOG.md`, bumps [`VERSION`](VERSION) to match, and is
 tagged `vX.Y.Z`. CI fails if `VERSION` and the newest release heading in
-`CHANGELOG.md` disagree, so the bump cannot be forgotten. `DSH_VERSION` is a separate pin: it is the dsh version this
-setup installs, and it changes only when the maintainer bumps it.
+`CHANGELOG.md` disagree, so the bump cannot be forgotten. `DSH_VERSION` is a
+separate pin: it is the dsh version this setup installs, and it changes only when
+the maintainer bumps it.
+
+A tag alone is not a release: the repo page shows the newest *GitHub Release* as
+"Latest". After tagging, publish one, with the CHANGELOG section as its notes:
+
+```
+gh release create vX.Y.Z --verify-tag --latest --title "vX.Y.Z - <short summary>" --notes-file <that section>
+```
 
 ## License
 
