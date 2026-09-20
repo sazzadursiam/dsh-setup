@@ -212,6 +212,7 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 | `update.bat` / `update.sh`    | Update an existing setup                                   |
 | `check.bat` / `check.sh`      | Check for updates, apply only when you say yes             |
 | `enable-autoupdate.bat`       | Add the login-time update check (Windows)                  |
+| `ensure-npm-path.bat`         | Put npm's global folder on PATH if `dsh` is not found — called by `setup.bat` and `update.bat` (Windows) |
 | `agents.bat` / `agents.sh`    | Write the shared agent rules to `~/.dsh/AGENTS.md`         |
 | `verify.bat` / `verify.sh`    | Check what is set up and what is missing                   |
 | `plugins/team-updater/`       | The in-app update button — added to your dsh profile by setup |
