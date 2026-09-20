@@ -38,6 +38,12 @@ jobs:
         # deleted only fails when that path runs - on a fresh machine, for setup.bat.
         run: node tests/bat-labels.mjs
 
+      - name: Markdown links and anchors must resolve
+        # Runs on Linux on purpose: GitHub serves the docs case-sensitively, and a
+        # link that only works on a case-insensitive Windows or macOS checkout is
+        # still broken for readers. External links are not fetched.
+        run: node tests/md-links.mjs
+
   version:
     name: VERSION matches CHANGELOG
     runs-on: ubuntu-latest
