@@ -9,6 +9,13 @@
   for the output of `verify`, so reports arrive with the one thing needed to
   triage them. Security reports go to GitHub's private reporting, not a public
   issue.
+- **A CI check that `VERSION` matches `CHANGELOG.md`.** v0.5.0 shipped with
+  `VERSION` still at 0.4.0, so `verify` and `update` reported the wrong version;
+  the check fails the build when the newest release heading and `VERSION`
+  disagree.
+- **Dependabot for GitHub Actions**, weekly, so the actions CI uses do not go
+  stale. The plugins declare no dependencies, so there is nothing else to watch.
+- A CI status badge in the README.
 
 ### Changed
 

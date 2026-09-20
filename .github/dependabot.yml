@@ -1,0 +1,10 @@
+# Keeps the actions used by .github/workflows/ci.yml current. The plugins under
+# plugins/ declare no dependencies, so there is nothing else to watch.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore"

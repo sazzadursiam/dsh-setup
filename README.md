@@ -1,5 +1,7 @@
 # dsh + Figma
 
+[![CI](https://github.com/sazzadursiam/dsh-setup/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/sazzadursiam/dsh-setup/actions/workflows/ci.yml)
+
 Get [DeepSeek Harness](https://www.deepseek.com/harness/en/) talking to Figma — create, edit and read designs from your agent.
 
 Install scripts, a working MCP config, and the dead ends documented so you don't repeat them.

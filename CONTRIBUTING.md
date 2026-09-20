@@ -74,7 +74,8 @@ when you change those.
 
 Maintainer only. A release commit moves the `[Unreleased]` entries under a new
 version heading in `CHANGELOG.md`, bumps [`VERSION`](VERSION) to match, and is
-tagged `vX.Y.Z`. `DSH_VERSION` is a separate pin: it is the dsh version this
+tagged `vX.Y.Z`. CI fails if `VERSION` and the newest release heading in
+`CHANGELOG.md` disagree, so the bump cannot be forgotten. `DSH_VERSION` is a separate pin: it is the dsh version this
 setup installs, and it changes only when the maintainer bumps it.
 
 ## License
