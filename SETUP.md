@@ -6,7 +6,7 @@
 
 > **About paths:** In this document `%USERPROFILE%` means your user folder (e.g. `C:\Users\AC`). In **cmd** it works as-is, and pasting it into a Windows file dialog opens the location too. In **PowerShell** replace it with `$env:USERPROFILE`. On **macOS/Linux** use `~` (your home folder, e.g. `/Users/AC`) instead — `%USERPROFILE%\.dsh` = `~/.dsh`.
 
-> **What you must do by hand on each machine:** Anthropic API key, Figma PAT, sign in to Figma Desktop, import the bridge plugin, select a workspace. Everything else happens by running commands.
+> **What you must do by hand on each machine:** a DeepSeek or Anthropic API key, Figma PAT, sign in to Figma Desktop, import the bridge plugin, select a workspace. Everything else happens by running commands.
 
 **Contents**
 
@@ -179,7 +179,7 @@ echo $FIGMA_ACCESS_TOKEN
 
 ### Step 4: API key
 
-`dsh web` → `http://127.0.0.1:3080` → Settings → Models → add the Anthropic key. Keys are stored in `~/.dsh/.credentials.yaml` **in plain text** — see the warning in Part 1 Step 4.
+`dsh web` → `http://127.0.0.1:3080` → Settings → Models → add a DeepSeek or Anthropic key (Part 1 Step 4 shows both). Keys are stored in `~/.dsh/.credentials.yaml` **in plain text** — see the warning in Part 1 Step 4.
 
 ### Step 5: Add the Figma MCP plugin
 
@@ -678,7 +678,7 @@ To build the whole system from scratch, follow this order. Details for each item
 
 **dsh config**
 
-- [ ] `dsh web` → `http://127.0.0.1:3080` → Settings → Models → add the Anthropic key
+- [ ] `dsh web` → `http://127.0.0.1:3080` → Settings → Models → add a DeepSeek or Anthropic key
 
 The rest of this checklist is for Figma integration — skip it if this machine
 only needs dsh for coding. Using `setup.bat` instead of building by hand, it

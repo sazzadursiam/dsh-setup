@@ -226,8 +226,8 @@ if "%INSTALL_FIGMA%"=="1" (
 echo.
 echo  2. Run:  dsh web
 echo     Open: http://127.0.0.1:3080
-echo     Settings - Models - add your Anthropic API key
-echo     (console.anthropic.com)
+echo     Settings - Models - add your API key: DeepSeek or Anthropic
+echo     platform.deepseek.com or console.anthropic.com
 echo.
 if "%INSTALL_FIGMA%"=="1" (
     echo  3. Open Figma Desktop, press Ctrl+/ , type: import

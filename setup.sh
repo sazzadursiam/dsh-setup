@@ -229,8 +229,8 @@ fi
 say ""
 say "  2. Run:  ${BOLD}dsh web${OFF}"
 say "     Open: http://127.0.0.1:3080"
-say "     Settings → Models → add your Anthropic API key"
-say "     ${DIM}console.anthropic.com${OFF}"
+say "     Settings → Models → add your API key: DeepSeek or Anthropic"
+say "     ${DIM}platform.deepseek.com or console.anthropic.com${OFF}"
 say ""
 if [ "$INSTALL_FIGMA" = 1 ]; then
   if [ "$OS" = "mac" ]; then

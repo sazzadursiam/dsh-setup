@@ -46,6 +46,12 @@
 
 ### Changed
 
+- **The docs and the `setup` closing message no longer say only "Anthropic API key".**
+  dsh takes a DeepSeek key as well - SETUP.md Part 1 Step 4 already said so - and
+  a DeepSeek user reading "add your Anthropic API key" could reasonably think a
+  key from a provider they do not use was required. README, SETUP.md, `.env.example`
+  and the last screen of `setup.bat` / `setup.sh` now say "a DeepSeek or Anthropic
+  key". `verify` already only checked that a credentials file exists.
 - `.claude/settings.json` is no longer tracked, and it and
   `.claude/settings.local.json` are git-ignored. The tracked copy held one
   machine's absolute paths and session ids, useful to nobody else.

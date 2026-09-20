@@ -113,7 +113,7 @@ if defined FIGMA_PLUGIN_MANAGED (
     set FAIL=1
 )
 
-REM ---------- Anthropic key ----------
+REM ---------- Provider API key ----------
 set CRED=%USERPROFILE%\.dsh\.credentials.yaml
 if not exist "%CRED%" (
     echo   [WARN] No credentials file yet

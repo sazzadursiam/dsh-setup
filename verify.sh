@@ -103,7 +103,7 @@ else
   hint "dsh plugin --profile web add \"file:$SCRIPT_DIR/plugins/figma-bridge\""
 fi
 
-# ---------- Anthropic key ----------
+# ---------- Provider API key ----------
 if [ -f "$HOME/.dsh/.credentials.yaml" ]; then
   pass "Credentials file exists"
 else
