@@ -16,6 +16,18 @@
 - **Dependabot for GitHub Actions**, weekly, so the actions CI uses do not go
   stale. The plugins declare no dependencies, so there is nothing else to watch.
 - A CI status badge in the README.
+- **Tests for the scripts that had none.** `tests/smoke.bat` now runs
+  `ensure-npm-path.bat` against a fake `npm`/`dsh` and a scratch registry key
+  (fixes PATH, saves it as `REG_EXPAND_SZ`, idempotent, silent when `dsh` is
+  reachable, writes nothing for a broken install) and fails if the real user PATH
+  changes; both smoke tests run `check` against a throwaway origin (up to date,
+  new commit, answer N leaves the checkout alone); `smoke.sh` runs `bash -n` on
+  every script, `setup.sh` and `update.sh` included. `tests/bat-labels.mjs`,
+  run in CI, fails when a `goto` or `call` in a `.bat` names a label that does
+  not exist. `setup` and `update` themselves still install software, so they get
+  only those parse-level checks.
+- **`.editorconfig`**, matching the conventions already in the tree: CRLF for
+  `.bat`, LF elsewhere, tabs in the plugin JavaScript.
 
 ### Fixed
 

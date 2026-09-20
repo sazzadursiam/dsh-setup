@@ -1,6 +1,7 @@
 @echo off
 setlocal EnableDelayedExpansion
-REM Smoke test for agents.bat and verify.bat, safe to run in CI or by hand.
+REM Smoke test for agents.bat, verify.bat, ensure-npm-path.bat and check.bat,
+REM safe to run in CI or by hand.
 REM
 REM   tests\smoke.bat
 REM
@@ -97,10 +98,117 @@ if errorlevel 1 (call :fail "second run exited non-zero" & type "%OUT%") else (c
 findstr /c:"no legacy entry found" "%OUT%" >nul 2>&1
 if errorlevel 1 (call :fail "second run did not report a no-op" & type "%OUT%") else (call :pass "second run is a clean no-op")
 
+echo.
+echo ensure-npm-path.bat when dsh is not on PATH
+REM Refuse to run without the hook: without it this section would write the fake
+REM npm folder into the REAL user PATH. And check afterwards that it did not.
+findstr /c:"DSH_TEST_ENV_KEY" ensure-npm-path.bat >nul 2>&1
+if errorlevel 1 (call :fail "ensure-npm-path.bat has no DSH_TEST_ENV_KEY hook - skipped, it would write to the real PATH" & goto :ep_done)
+call :regdump "%SANDBOX%\real1.txt" Environment
+REM The persistent write goes to a scratch key under HKCU, never to the real
+REM Environment key - DSH_TEST_ENV_KEY is the hook for that.
+set "EP=%SANDBOX%\ep"
+set "EP_PREFIX=%EP%\prefix (x86)\npm"
+set "EP_EMPTY=%EP%\empty"
+set "EP_CASE=%SCRIPT_DIR%\tests\ensure-npm-path-case.bat"
+set "DSH_TEST_ENV_KEY=dshsmoke%RANDOM%%RANDOM%"
+mkdir "%EP_PREFIX%" "%EP_EMPTY%" 2>nul
+echo @echo off> "%EP_PREFIX%\dsh.cmd"
+powershell -NoProfile -Command "$k=[Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('%DSH_TEST_ENV_KEY%'); $k.SetValue('Path','%%USERPROFILE%%\bin',[Microsoft.Win32.RegistryValueKind]::ExpandString); $k.Close()" >nul 2>&1
+setlocal
+call "%EP_CASE%" "%EP_PREFIX%" offpath >"%OUT%" 2>&1
+endlocal
+findstr /c:"EXIT=0" "%OUT%" >nul 2>&1
+if errorlevel 1 (call :fail "did not exit 0" & type "%OUT%") else (call :pass "exits 0")
+findstr /c:"DSH=found" "%OUT%" >nul 2>&1
+if errorlevel 1 (call :fail "dsh is still not found afterwards" & type "%OUT%") else (call :pass "dsh is found afterwards, folder with parentheses and a space")
+findstr /c:"added" "%OUT%" >nul 2>&1
+if errorlevel 1 (call :fail "did not say it changed PATH") else (call :pass "says it changed PATH")
+call :regdump "%SANDBOX%\reg1.txt" %DSH_TEST_ENV_KEY%
+findstr /b /c:"ExpandString|" "%SANDBOX%\reg1.txt" >nul 2>&1
+if errorlevel 1 (call :fail "saved PATH is not REG_EXPAND_SZ") else (call :pass "saved PATH stays REG_EXPAND_SZ")
+findstr /c:"%%USERPROFILE%%\bin" "%SANDBOX%\reg1.txt" >nul 2>&1
+if errorlevel 1 (call :fail "an existing entry with a variable in it was expanded or lost") else (call :pass "existing entries with a variable in them are kept unexpanded")
+findstr /c:"prefix (x86)\npm" "%SANDBOX%\reg1.txt" >nul 2>&1
+if errorlevel 1 (call :fail "npm folder not saved") else (call :pass "npm folder saved for new terminals")
+setlocal
+call "%EP_CASE%" "%EP_PREFIX%" offpath >"%OUT%" 2>&1
+endlocal
+call :regdump "%SANDBOX%\reg2.txt" %DSH_TEST_ENV_KEY%
+fc "%SANDBOX%\reg1.txt" "%SANDBOX%\reg2.txt" >nul 2>&1
+if errorlevel 1 (call :fail "second run changed the saved PATH again") else (call :pass "second run adds no duplicate")
+setlocal
+call "%EP_CASE%" "%EP_PREFIX%" onpath >"%OUT%" 2>&1
+endlocal
+findstr /c:"[INFO]" "%OUT%" >nul 2>&1
+if errorlevel 1 (call :pass "silent when dsh is already reachable") else (call :fail "printed something although dsh was reachable" & type "%OUT%")
+call :regdump "%SANDBOX%\reg3.txt" %DSH_TEST_ENV_KEY%
+fc "%SANDBOX%\reg1.txt" "%SANDBOX%\reg3.txt" >nul 2>&1
+if errorlevel 1 (call :fail "changed the saved PATH although dsh was reachable") else (call :pass "leaves the saved PATH alone when dsh is reachable")
+setlocal
+call "%EP_CASE%" "%EP_EMPTY%" offpath >"%OUT%" 2>&1
+endlocal
+findstr /c:"EXIT=1" "%OUT%" >nul 2>&1
+if errorlevel 1 (call :fail "should exit 1 when the folder holds no dsh" & type "%OUT%") else (call :pass "exits 1 when the folder holds no dsh")
+findstr /c:"[WARN]" "%OUT%" >nul 2>&1
+if errorlevel 1 (call :fail "no warning printed") else (call :pass "explains what is wrong")
+call :regdump "%SANDBOX%\reg4.txt" %DSH_TEST_ENV_KEY%
+fc "%SANDBOX%\reg1.txt" "%SANDBOX%\reg4.txt" >nul 2>&1
+if errorlevel 1 (call :fail "wrote PATH for a broken install") else (call :pass "does not touch the saved PATH for a broken install")
+powershell -NoProfile -Command "[Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree('%DSH_TEST_ENV_KEY%', $false)" >nul 2>&1
+set "DSH_TEST_ENV_KEY="
+call :regdump "%SANDBOX%\real2.txt" Environment
+fc "%SANDBOX%\real1.txt" "%SANDBOX%\real2.txt" >nul 2>&1
+if errorlevel 1 (call :fail "the REAL user PATH changed while testing - check HKCU\Environment") else (call :pass "the real user PATH was not touched")
+:ep_done
+
+echo.
+echo check.bat against a throwaway origin
+REM origin.git <- work (holds check.bat) and other (pushes the "new commit").
+REM check.bat is only ever answered "N", so update.bat is never reached.
+set "CK=%SANDBOX%\ck"
+set "GIT=git -c user.name=smoke -c user.email=smoke@example.invalid -c core.autocrlf=false"
+mkdir "%CK%" 2>nul
+git init -q --bare -b main "%CK%\origin.git" >nul 2>&1
+git init -q -b main "%CK%\work" >nul 2>&1
+copy /y check.bat "%CK%\work\check.bat" >nul
+%GIT% -C "%CK%\work" add -A >nul 2>&1
+%GIT% -C "%CK%\work" commit -q -m init >nul 2>&1
+git -C "%CK%\work" remote add origin "%CK%\origin.git" >nul 2>&1
+git -C "%CK%\work" push -q -u origin main >nul 2>&1
+setlocal
+call "%CK%\work\check.bat" >"%OUT%" 2>&1
+set "CHECK_EXIT=!errorlevel!"
+endlocal & set "CHECK_EXIT=%CHECK_EXIT%"
+cd /d "%SCRIPT_DIR%"
+if "%CHECK_EXIT%"=="0" (call :pass "up to date: exits 0") else (call :fail "up to date: exited %CHECK_EXIT%" & type "%OUT%")
+findstr /c:"Already up to date" "%OUT%" >nul 2>&1
+if errorlevel 1 (call :fail "did not say it is up to date" & type "%OUT%") else (call :pass "says it is up to date")
+git clone -q "%CK%\origin.git" "%CK%\other" >nul 2>&1
+echo new> "%CK%\other\new.txt"
+%GIT% -C "%CK%\other" add -A >nul 2>&1
+%GIT% -C "%CK%\other" commit -q -m "a new commit" >nul 2>&1
+git -C "%CK%\other" push -q origin main >nul 2>&1
+git -C "%CK%\work" rev-parse HEAD >"%SANDBOX%\head1.txt"
+echo N| call "%CK%\work\check.bat" >"%OUT%" 2>&1
+cd /d "%SCRIPT_DIR%"
+findstr /c:"update(s) available" "%OUT%" >nul 2>&1
+if errorlevel 1 (call :fail "did not report the new commit" & type "%OUT%") else (call :pass "reports a new commit")
+findstr /c:"Skipped" "%OUT%" >nul 2>&1
+if errorlevel 1 (call :fail "answering N did not skip" & type "%OUT%") else (call :pass "answering N skips the update")
+git -C "%CK%\work" rev-parse HEAD >"%SANDBOX%\head2.txt"
+fc "%SANDBOX%\head1.txt" "%SANDBOX%\head2.txt" >nul 2>&1
+if errorlevel 1 (call :fail "checkout moved although the answer was N") else (call :pass "checkout is left where it was")
+
 rd /s /q "%SANDBOX%" 2>nul
 echo.
 if "%FAILED%"=="1" (echo some smoke checks failed) else (echo all smoke checks passed)
 exit /b %FAILED%
+
+:regdump
+REM %1 = output file, %2 = key under HKCU to dump
+powershell -NoProfile -Command "$k=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('%~2'); if ($k) { $k.GetValueKind('Path').ToString() + '|' + $k.GetValue('Path','',[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames); $k.Close() }" >"%~1" 2>&1
+exit /b 0
 
 :pass
 echo   [ OK ] %~1

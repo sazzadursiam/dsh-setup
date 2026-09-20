@@ -86,6 +86,40 @@ if [ -f "$PROFILE_CFG.bak" ]; then pass "backup written"; else fail "no .bak wri
 if node plugins/figma-bridge/lib/migrate.js >"$OUT" 2>&1; then pass "second run exits 0"; else fail "second run exited non-zero: $(cat "$OUT")"; fi
 if out_has "no legacy entry found"; then pass "second run is a clean no-op"; else fail "second run did not report a no-op: $(cat "$OUT")"; fi
 
+step "every shell script parses (bash -n)"
+# shellcheck does the real linting in CI; this is the cheap "does it even parse"
+# check that also runs by hand, and it covers setup.sh and update.sh, which no
+# other test here runs.
+for script in ./*.sh tests/*.sh; do
+  if bash -n "$script" 2>"$OUT"; then pass "$script"; else fail "$script: $(cat "$OUT")"; fi
+done
+
+step "check.sh against a throwaway origin"
+# origin.git <- work (holds check.sh) and other (pushes the "new commit").
+# check.sh is only ever answered "n", so update.sh is never reached.
+CK="$SANDBOX/ck"
+g() { git -c user.name=smoke -c user.email=smoke@example.invalid -c core.autocrlf=false "$@"; }
+mkdir -p "$CK"
+git init -q --bare -b main "$CK/origin.git"
+git init -q -b main "$CK/work"
+cp check.sh "$CK/work/check.sh"
+g -C "$CK/work" add -A
+g -C "$CK/work" commit -q -m init
+git -C "$CK/work" remote add origin "$CK/origin.git"
+git -C "$CK/work" push -q -u origin main
+if "$CK/work/check.sh" >"$OUT" 2>&1; then pass "up to date: exits 0"; else fail "up to date: exited non-zero: $(cat "$OUT")"; fi
+if out_has "Already up to date"; then pass "says it is up to date"; else fail "did not say it is up to date: $(cat "$OUT")"; fi
+git clone -q "$CK/origin.git" "$CK/other"
+echo new > "$CK/other/new.txt"
+g -C "$CK/other" add -A
+g -C "$CK/other" commit -q -m "a new commit"
+git -C "$CK/other" push -q origin main
+head_before="$(git -C "$CK/work" rev-parse HEAD)"
+printf 'n\n' | "$CK/work/check.sh" >"$OUT" 2>&1
+if out_has "update(s) available"; then pass "reports a new commit"; else fail "did not report the new commit: $(cat "$OUT")"; fi
+if out_has "Skipped"; then pass "answering n skips the update"; else fail "answering n did not skip: $(cat "$OUT")"; fi
+if [ "$(git -C "$CK/work" rev-parse HEAD)" = "$head_before" ]; then pass "checkout is left where it was"; else fail "checkout moved although the answer was n"; fi
+
 echo ""
 if [ "$FAILED" -eq 0 ]; then
   printf '%sall smoke checks passed%s\n' "$GREEN" "$OFF"
