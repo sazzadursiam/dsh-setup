@@ -14,8 +14,8 @@ to import it. Its only jobs are: exist as an installable package whose
 so a version bump here reaches an already-installed profile.
 
 The actual bridge — a plugin imported into Figma Desktop, talking to the MCP
-server over a local WebSocket — is external and stays manual. See `SETUP.md`
-Part 6, Step 5.
+server over a local WebSocket — is external and stays manual. See
+[`docs/figma.md`](../../docs/figma.md), Step 5.
 
 ## Install
 
@@ -88,7 +88,7 @@ plugin-agnostic mechanism (`agents.sh --role=`), not part of this package.
 
 ## Verified
 
-`node tests/check.mjs` — the pinned version matches `SETUP.md`'s embedded
-example, `package.json`'s `dsh.bundle.patch` points at a real file, `lib/pin.js`
+`node tests/check.mjs` — the pinned version matches the embedded example in
+`docs/figma.md`, `package.json`'s `dsh.bundle.patch` points at a real file, `lib/pin.js`
 rewrites and reports correctly against a sandboxed profile, and `lib/migrate.js`
 handles the legacy-single-entry, already-migrated, and merged-block cases.

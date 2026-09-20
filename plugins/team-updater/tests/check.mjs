@@ -6,7 +6,7 @@
  * Accept header), so the numbers the Settings row shows are known-good before
  * the plugin is ever installed.
  */
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { checkoutRoots } from '../lib/checkout.js';
@@ -120,20 +120,26 @@ try {
 
 // ── the checkout this copy ships in ─────────────────────────────────────────
 // The pins have one source each, but a few copies cannot read it: the default
-// above, and commands in SETUP.md meant for pasting. These fail when a copy drifts.
+// above, and commands in the docs meant for pasting. These fail when a copy drifts.
 const repoFile = (name) => readFile(new URL(`../../../${name}`, import.meta.url), 'utf8').catch(() => null);
+// The install commands live in SETUP.md and in any page under docs/.
+const repoDocs = async () => {
+	const pages = (await readdir(new URL('../../../docs/', import.meta.url)).catch(() => [])).filter((n) => n.endsWith('.md'));
+	const texts = await Promise.all(['SETUP.md', ...pages.map((n) => `docs/${n}`)].map(repoFile));
+	return texts.filter((t) => t !== null).join('\n');
+};
 const allowFile = await repoFile('DSH_ALLOW_SCRIPTS');
 const ALLOW_SCRIPTS = allowFile?.trim() ?? DEFAULT_ALLOW_SCRIPTS;
 if (allowFile === null) {
 	console.log('skip checkout checks: not running from a dsh-setup checkout');
 } else {
 	check('built-in default matches DSH_ALLOW_SCRIPTS', DEFAULT_ALLOW_SCRIPTS, ALLOW_SCRIPTS);
-	const setupDoc = await repoFile('SETUP.md');
+	const setupDoc = await repoDocs();
 	const pin = (await repoFile('DSH_VERSION')).trim();
 	const dshCommands = [...setupDoc.matchAll(/npm install -g --allow-scripts=(\S+) @deepseek-ai\/dsh(@[0-9A-Za-z.-]+)?/g)];
-	check('SETUP.md has dsh install commands', dshCommands.length > 0, true);
-	check('every SETUP.md install command uses DSH_ALLOW_SCRIPTS', dshCommands.every((m) => m[1] === ALLOW_SCRIPTS), true);
-	check('every SETUP.md install command uses DSH_VERSION', dshCommands.every((m) => m[2] === `@${pin}`), true);
+	check('the docs have dsh install commands', dshCommands.length > 0, true);
+	check('every documented install command uses DSH_ALLOW_SCRIPTS', dshCommands.every((m) => m[1] === ALLOW_SCRIPTS), true);
+	check('every documented install command uses DSH_VERSION', dshCommands.every((m) => m[2] === `@${pin}`), true);
 }
 
 // ── registry lookup, exactly as the host half does it ───────────────────────

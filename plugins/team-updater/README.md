@@ -126,7 +126,7 @@ plugin composes only `webServer` and `connection` and adds no policy of its own.
   checkout and the profile-copy layout (absolute and relative `file:` specs,
   empty and malformed pins, a missing explicit `versionFile`), finding and
   validating `DSH_ALLOW_SCRIPTS` the same way, the built-in fallback list and
-  SETUP.md's install commands matching the checkout's files, the shipped
+  the docs' install commands matching the checkout's files, the shipped
   blocked list, and the real registry lookup.
 - The row renders in Settings → General — pinned, it reads
   "0.1.2-rc.1 · up to date, pinned by dsh-setup" with only *Check for updates*
