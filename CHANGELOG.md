@@ -26,6 +26,12 @@
   run in CI, fails when a `goto` or `call` in a `.bat` names a label that does
   not exist. `setup` and `update` themselves still install software, so they get
   only those parse-level checks.
+- **`tests/md-links.mjs`, run in CI**, fails when a Markdown link or `#anchor`
+  no longer resolves, or a code span names a `plugins/`, `templates/`, `tests/` or
+  `.github/` file that does not exist. It runs on Linux, where GitHub serves the
+  docs, so a link that only works on a case-insensitive checkout is caught. No
+  network: external links are counted, not fetched. `SETUP.md` Part 10, which
+  names the removed `templates/AGENTS.md` on purpose, is the one listed exception.
 - **`.editorconfig`**, matching the conventions already in the tree: CRLF for
   `.bat`, LF elsewhere, tabs in the plugin JavaScript.
 

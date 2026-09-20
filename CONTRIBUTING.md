@@ -38,6 +38,7 @@ ones for your platform before you push.
 # macOS / Linux
 ./tests/smoke.sh                                  # agents, verify, check, bash -n on every script
 git ls-files '*.sh' | xargs shellcheck            # lint the shell scripts
+node tests/md-links.mjs                           # Markdown links and anchors resolve
 node plugins/team-updater/tests/check.mjs
 node plugins/figma-bridge/tests/check.mjs
 ```
@@ -46,6 +47,7 @@ node plugins/figma-bridge/tests/check.mjs
 :: Windows — Command Prompt
 tests\smoke.bat                                   :: agents, verify, check, ensure-npm-path
 node tests\bat-labels.mjs                          :: every goto/call in a .bat has its label
+node tests\md-links.mjs                             :: Markdown links and anchors resolve
 node plugins\team-updater\tests\check.mjs
 node plugins\figma-bridge\tests\check.mjs
 ```
@@ -70,7 +72,10 @@ fails if your real user PATH changes — keep that hook working when you touch i
   overwritten on the next update.
 - **Docs travel with code.** If a change alters what a user sees or types,
   update `README.md` and `SETUP.md` in the same PR. A doc that disagrees with
-  the script is a bug.
+  the script is a bug. `tests/md-links.mjs` fails on a link or `#anchor` that no
+  longer resolves, and on a code span naming a `plugins/`, `templates/`, `tests/`
+  or `.github/` file that is not there; a path that is meant to be gone (history)
+  goes in the `HISTORICAL` list at the top of that script, with the reason.
 - **Nothing machine-specific in the repo.** No absolute paths of your machine, no
   usernames, no `.claude/settings*.json` (they are git-ignored for that reason).
 
