@@ -32,6 +32,13 @@
   docs, so a link that only works on a case-insensitive checkout is caught. No
   network: external links are counted, not fetched. `SETUP.md` Part 10, which
   names the removed `templates/AGENTS.md` on purpose, is the one listed exception.
+- **A note on plugin versions**, in CONTRIBUTING and in the comments of
+  `update.sh` / `update.bat`. Both said or implied that re-adding a plugin is a
+  no-op. It is, for the config entry, but it also copies changed plugin files
+  again even at the same version, which is how new plugin code reaches a machine
+  after a pull - so the call must stay, and plugin versions need not be bumped
+  for a code change. Checked in a scratch profile with the source and the
+  profile on different drives; the same-drive hard-link case was not.
 - **`.editorconfig`**, matching the conventions already in the tree: CRLF for
   `.bat`, LF elsewhere, tabs in the plugin JavaScript.
 

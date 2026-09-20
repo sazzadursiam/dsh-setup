@@ -130,7 +130,10 @@ call "%SCRIPT_DIR%\ensure-npm-path.bat"
 
 REM ---------- dsh plugins (update button, Figma MCP) ----------
 REM Re-run on every update so an existing install picks up the plugins, and so
-REM the spec follows this checkout if it was moved. Adding them twice is a no-op.
+REM the spec follows this checkout if it was moved. Adding a plugin again does not
+REM duplicate its config entry, but it DOES copy changed plugin files again, even
+REM at the same package version - that is how new plugin code reaches a machine
+REM after a pull. Do not skip the call to save time.
 echo [+] Checking dsh plugins (update button, Figma MCP)...
 set "DSH_PROFILE_DIR=%DSH_HOME%"
 if not defined DSH_PROFILE_DIR set "DSH_PROFILE_DIR=%USERPROFILE%\.dsh"

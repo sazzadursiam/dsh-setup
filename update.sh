@@ -109,7 +109,10 @@ say ""
 
 # ---------- dsh plugins (update button, Figma MCP) ----------
 # Re-run on every update so an existing install picks up the plugins, and so
-# the spec follows this checkout if it was moved. Adding them twice is a no-op.
+# the spec follows this checkout if it was moved. Adding a plugin again does not
+# duplicate its config entry, but it DOES copy changed plugin files again, even
+# at the same package version - that is how new plugin code reaches a machine
+# after a pull. Do not skip the call to save time.
 say "${BOLD}[+]${OFF} Checking dsh plugins (update button, Figma MCP)..."
 PLUGIN_LOG="${TMPDIR:-/tmp}/dsh-setup-plugin-add.log"
 # --dump-config creates the web profile as a side effect and exits immediately
