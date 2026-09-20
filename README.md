@@ -57,7 +57,7 @@ On Windows, if the script installs Node or Git, it stops and asks you to reopen 
 ## Manual steps
 
 1. **Run `dsh web`**, then set your Figma token under Settings → General → "Figma token" (no terminal needed — restart dsh after saving). Setting it as an environment variable instead still works too (see `.env.example`). If you skipped Figma during setup, click "Add Figma integration" first.
-2. **Add your Anthropic API key** under Settings → Models
+2. **Add an API key** under Settings → Models — DeepSeek or Anthropic
 3. **Import the bridge plugin** into Figma Desktop
 
 Full detail in `SETUP.md`.
@@ -230,7 +230,7 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 
 ## Secrets
 
-No tokens live in this repo. The Figma token can be set as a system environment variable, or pasted into Settings → General in the dsh UI (see `plugins/figma-bridge/`); the Anthropic key is entered in the dsh UI.
+No tokens live in this repo. The Figma token can be set as a system environment variable, or pasted into Settings → General in the dsh UI (see `plugins/figma-bridge/`); the provider API key (DeepSeek or Anthropic) is entered in the dsh UI.
 
 Entering a key in the UI is not the same as encrypting it: dsh writes every provider key **in plain text** to `~/.dsh/.credentials.yaml`, and the Figma token set via Settings → General is written **in plain text** to `~/.dsh/profiles/web/node_modules/dsh-figma-bridge/cordis.patch.yml`. Never copy those files or the `.dsh/` folder to another machine, a repo, or a syncing backup, and never paste their contents anywhere. Details in `SETUP.md`, Part 1 Step 4.
 
