@@ -87,9 +87,10 @@ if node plugins/figma-bridge/lib/migrate.js >"$OUT" 2>&1; then pass "second run 
 if out_has "no legacy entry found"; then pass "second run is a clean no-op"; else fail "second run did not report a no-op: $(cat "$OUT")"; fi
 
 step "every shell script parses (bash -n)"
-# shellcheck does the real linting in CI; this is the cheap "does it even parse"
+# CI's lint job does the real linting. This is the cheap "does it even parse"
 # check that also runs by hand, and it covers setup.sh and update.sh, which no
-# other test here runs.
+# other test here runs. (Do not start a comment with the word "shellcheck":
+# it reads that as one of its own directives.)
 for script in ./*.sh tests/*.sh; do
   if bash -n "$script" 2>"$OUT"; then pass "$script"; else fail "$script: $(cat "$OUT")"; fi
 done
