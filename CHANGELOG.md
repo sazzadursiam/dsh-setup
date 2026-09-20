@@ -32,6 +32,16 @@
   docs, so a link that only works on a case-insensitive checkout is caught. No
   network: external links are counted, not fetched. `SETUP.md` Part 10, which
   names the removed `templates/AGENTS.md` on purpose, is the one listed exception.
+- **`SETUP.md` is split.** Part 6 (Figma integration, 226 lines) is now
+  `docs/figma.md` and Part 7 (project setup and workflow, 119 lines) is
+  `docs/workflow.md`; `SETUP.md` goes from 847 to about 500 lines and keeps a
+  stub for each, so the Part numbers, the contents list and every
+  `#part-6...` / `#part-7...` anchor still work. The two moved pages use `##`
+  for what were `###` headings; the text is otherwise unchanged apart from
+  references to other Parts, which are now links. Two plugin tests read
+  `SETUP.md`: they now read `docs/` as well, and the Figma one also fails if the
+  pinned-version example cannot be found at all, instead of passing on an empty
+  list. Part 10 and 11 were missing from the contents list and are added.
 - **A note on plugin versions**, in CONTRIBUTING and in the comments of
   `update.sh` / `update.bat`. Both said or implied that re-adding a plugin is a
   no-op. It is, for the config entry, but it also copies changed plugin files

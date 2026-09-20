@@ -2,7 +2,8 @@
  * Local verification for dsh-figma-bridge — run: node tests/check.mjs
  *
  * Checks the parts that can be verified without a live dsh host: the pinned
- * version stays in step across this package and SETUP.md's embedded example,
+ * version stays in step across this package and the docs' embedded example
+ * (docs/figma.md),
  * and lib/pin.js / lib/migrate.js behave correctly against a sandboxed profile
  * (dependency-free, like plugins/team-updater/tests/check.mjs).
  */
@@ -35,11 +36,16 @@ check('package.json.dsh.bundle.patch points at cordis.patch.yml', pkg.dsh?.bundl
 
 // ── the checkout this copy ships in ─────────────────────────────────────────
 const repoFile = (name) => readFile(new URL(`../../../${name}`, import.meta.url), 'utf8').catch(() => null);
+// The example lives in docs/figma.md; SETUP.md is read too, so it still counts if it moves back.
 const setupDoc = await repoFile('SETUP.md');
+const figmaDoc = await repoFile('docs/figma.md');
 if (setupDoc === null) {
 	console.log('skip checkout checks: not running from a dsh-setup checkout');
 } else {
-	check('SETUP.md shows the same figma-console-mcp version', figmaPin(setupDoc).every((v) => v === ownVersions[0]), true);
+	const pins = figmaPin(`${setupDoc}\n${figmaDoc ?? ''}`);
+	// .every() on an empty list is true, so a moved or deleted example would otherwise pass unnoticed.
+	check('the docs show a figma-console-mcp version at all', pins.length > 0, true);
+	check('the docs show the same figma-console-mcp version', pins.every((v) => v === ownVersions[0]), true);
 }
 
 // ── lib/pin.js, driven as a subprocess against a sandboxed DSH_HOME ────────

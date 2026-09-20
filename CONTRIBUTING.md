@@ -71,7 +71,7 @@ fails if your real user PATH changes — keep that hook working when you touch i
   `templates/roles/*.md`; never edit a generated `~/.dsh/AGENTS.md`, it is
   overwritten on the next update.
 - **Docs travel with code.** If a change alters what a user sees or types,
-  update `README.md` and `SETUP.md` in the same PR. A doc that disagrees with
+  update `README.md`, `SETUP.md` and the pages under `docs/` in the same PR. A doc that disagrees with
   the script is a bug. `tests/md-links.mjs` fails on a link or `#anchor` that no
   longer resolves, and on a code span naming a `plugins/`, `templates/`, `tests/`
   or `.github/` file that is not there; a path that is meant to be gone (history)
