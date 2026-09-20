@@ -50,6 +50,12 @@ Desktop.ini
 # agents.sh / agents.bat. Yours, not shipped. See templates/local.example.md.
 local.md
 
+# Claude Code's per-machine settings — permission grants and absolute paths of
+# whoever ran it, of no use to anyone else. `*.local` above does not match
+# `settings.local.json`, so it is listed here.
+.claude/settings.json
+.claude/settings.local.json
+
 # Bengali translations are maintained locally, not shipped. Keeping them in the
 # repo meant every doc change had to be made twice.
 *.bn.md

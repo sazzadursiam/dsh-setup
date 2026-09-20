@@ -235,7 +235,7 @@ If a token ever gets committed, deleting the file is not enough — it stays in 
 
 ## Status
 
-dsh is a developer preview and ships breaking changes. If something here stops matching reality, open an issue or send a PR — that is how this stays useful.
+dsh is a developer preview and ships breaking changes. If something here stops matching reality, open an issue or send a PR — that is how this stays useful. How to do that is in [`CONTRIBUTING.md`](CONTRIBUTING.md); security problems go through [`SECURITY.md`](SECURITY.md), not a public issue.
 
 ## Author
 
