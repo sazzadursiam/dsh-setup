@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`CONTRIBUTING.md`, `SECURITY.md` and `CODE_OF_CONDUCT.md`**, plus bug-report
+  and feature-request issue forms and a PR template. The bug-report form asks
+  for the output of `verify`, so reports arrive with the one thing needed to
+  triage them. Security reports go to GitHub's private reporting, not a public
+  issue.
+
+### Changed
+
+- `.claude/settings.json` is no longer tracked, and it and
+  `.claude/settings.local.json` are git-ignored. The tracked copy held one
+  machine's absolute paths and session ids, useful to nobody else.
+
 ## [0.5.0] — 2026-09-17
 
 ### Added

@@ -1,0 +1,66 @@
+name: Bug report
+description: Something in setup, update, verify or the plugins does not work
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Run `verify.bat` (Windows) or `./verify.sh` (macOS / Linux) first and paste its
+        output below — it says which piece is missing.
+
+        **Remove any token or key before pasting.** Figma tokens start with `figd_`.
+        Security problems do not belong here: see SECURITY.md.
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: dropdown
+    id: script
+    attributes:
+      label: What were you running?
+      options:
+        - setup
+        - update
+        - check / auto-update
+        - verify
+        - agents (agent rules)
+        - team-updater plugin (Settings → General)
+        - figma-bridge plugin
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Contents of the `VERSION` file in your checkout.
+      placeholder: "0.5.0"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. …
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: verify
+    attributes:
+      label: Output of verify
+      description: Plus any error text from the script that failed.
+      render: text
