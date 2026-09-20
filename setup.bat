@@ -85,6 +85,9 @@ echo [3/3] Installing dsh %DSH_PIN%...
 echo       This takes a few minutes.
 call npm install -g --allow-scripts=%DSH_ALLOW% %DSH_SPEC%
 if errorlevel 1 goto :failed
+REM npm's global folder is not always on PATH, and the plugin steps below all
+REM run `dsh`. This puts it there (this session and new terminals) if it is not.
+call "%~dp0ensure-npm-path.bat"
 echo.
 
 REM ---------- Figma integration (opt-in) ----------

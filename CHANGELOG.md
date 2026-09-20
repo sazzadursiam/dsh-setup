@@ -17,6 +17,21 @@
   stale. The plugins declare no dependencies, so there is nothing else to watch.
 - A CI status badge in the README.
 
+### Fixed
+
+- **`setup.bat` on a machine where npm's global folder is not on PATH.** The
+  dsh install succeeded, but the next step, `dsh --profile web --dump-config`,
+  failed with `'dsh' is not recognized`, so the web profile and the plugins were
+  skipped while the script still ended on "INSTALL COMPLETE". The Node installer
+  usually adds `%APPDATA%\npm` to PATH, but not always. New
+  `ensure-npm-path.bat`, called by `setup.bat` after the dsh install and by
+  `update.bat` before it runs `dsh`, does nothing when `dsh` is already
+  reachable; when it is not, it adds npm's global folder to PATH for the
+  running script and saves it to the user's PATH for new terminals. The user
+  PATH is written as `REG_EXPAND_SZ` directly, because
+  `[Environment]::SetEnvironmentVariable` would freeze every `%VAR%` in it.
+  Windows only: `setup.sh` is untouched.
+
 ### Changed
 
 - `.claude/settings.json` is no longer tracked, and it and

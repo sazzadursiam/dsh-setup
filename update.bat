@@ -123,6 +123,11 @@ if "%SKIP_DSH%"=="1" (
 )
 echo.
 
+REM ---------- dsh on PATH ----------
+REM npm's global folder is not always on PATH, and everything below runs `dsh`.
+REM Silent when dsh is already reachable; see ensure-npm-path.bat.
+call "%SCRIPT_DIR%\ensure-npm-path.bat"
+
 REM ---------- dsh plugins (update button, Figma MCP) ----------
 REM Re-run on every update so an existing install picks up the plugins, and so
 REM the spec follows this checkout if it was moved. Adding them twice is a no-op.
