@@ -76,6 +76,13 @@ fails if your real user PATH changes — keep that hook working when you touch i
   longer resolves, and on a code span naming a `plugins/`, `templates/`, `tests/`
   or `.github/` file that is not there; a path that is meant to be gone (history)
   goes in the `HISTORICAL` list at the top of that script, with the reason.
+- **Plugin versions do not deliver anything.** `plugins/*/package.json` says
+  `0.1.0` and does not need to move when the plugin code changes: `update` runs
+  `dsh plugin add` on every run, and that copies changed plugin files again even
+  at the same version (checked with the checkout and the dsh profile on
+  different drives, the case where dsh copies instead of hard-linking). A code
+  change reaches a machine on its next `update`. Bump a plugin version only if
+  you want the number itself to mean something.
 - **Nothing machine-specific in the repo.** No absolute paths of your machine, no
   usernames, no `.claude/settings*.json` (they are git-ignored for that reason).
 
