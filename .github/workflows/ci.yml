@@ -16,7 +16,7 @@ jobs:
     name: Lint (shellcheck + line endings)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: shellcheck
         run: git ls-files '*.sh' | xargs shellcheck
@@ -37,7 +37,7 @@ jobs:
     name: VERSION matches CHANGELOG
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: VERSION must equal the newest release heading in CHANGELOG.md
         # v0.5.0 was released with VERSION still at 0.4.0, so verify and update
@@ -64,7 +64,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: agents.sh / verify.sh
         run: ./tests/smoke.sh
@@ -79,7 +79,7 @@ jobs:
     name: Smoke test (windows-latest)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: agents.bat / verify.bat
         shell: cmd
