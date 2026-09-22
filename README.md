@@ -6,7 +6,7 @@ Get [DeepSeek Harness](https://www.deepseek.com/harness/en/) talking to Figma �
 
 Install scripts, a working MCP config, and the dead ends documented so you don't repeat them.
 
-> **Full guide:** [`SETUP.md`](SETUP.md) — install, troubleshooting, maintenance. Longer topics have their own page: [Figma integration](docs/figma.md), [project setup and workflow](docs/workflow.md).
+> **Full guide:** [`SETUP.md`](SETUP.md) — install, troubleshooting, maintenance. Longer topics have their own page: [Figma integration](docs/figma.md), [project setup and workflow](docs/workflow.md), [GLM (Z.AI) as a second model](docs/glm.md).
 
 ## What this gets you
 
@@ -210,6 +210,7 @@ This is upstream: the CDP transport those tools relied on was removed from Local
 | `SETUP.md`                    | Guide (English) — install on each OS, troubleshooting, maintenance |
 | `docs/figma.md`               | Figma integration: token, config file, bridge plugin       |
 | `docs/workflow.md`            | Per-project setup, where agent rules live, Figma → code    |
+| `docs/glm.md`                 | GLM (Z.AI) as a second model: required `reasoning: low` setting |
 | `setup.bat` / `setup.sh`      | Install scripts                                            |
 | `update.bat` / `update.sh`    | Update an existing setup                                   |
 | `check.bat` / `check.sh`      | Check for updates, apply only when you say yes             |
