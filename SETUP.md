@@ -121,6 +121,8 @@ Open **Settings → Models**.
 
 **Anthropic** — **Add provider** → Anthropic → paste the key. Model list, endpoint and protocol come automatically. Get the key from console.anthropic.com → API keys. You need credit on the console; a Claude.ai subscription does not enable the API.
 
+**Z.AI (GLM)** — optional second model, useful for teams that split coding (DeepSeek) from UI/design reasoning (GLM). Same **Add provider** flow, but needs one extra hand-edited setting or every call fails — see [docs/glm.md](docs/glm.md).
+
 Once saved it works without a restart. Keys are stored in `%USERPROFILE%\.dsh\.credentials.yaml` (`$DSH_HOME` = dsh's data folder = `%USERPROFILE%\.dsh`).
 
 > ⚠️ **That file stores your keys in plain text.** Its `refs:` section lists every key by name, readable in any text editor — the UI hides them, the file does not. Treat `.dsh\` like a password file: never copy it to another machine, never put it in a repo or a backup that syncs, and never paste its contents into a chat or issue. Anyone who reads it has all your provider keys. If it leaks, rotate every key it contains.
