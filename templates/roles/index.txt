@@ -6,3 +6,4 @@
 figma|Read and write Figma through the Desktop Bridge
 design-to-code|Build frontend code from Figma designs
 visual-assets|Photoshop and Illustrator work
+model-routing|Using a local LiteLLM smart-router proxy

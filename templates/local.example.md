@@ -20,3 +20,7 @@
 - `deepseek-v4-flash` and `deepseek-v4-pro` appear under **two** providers:
   `deepseek-official` (direct) and `qwen` (resold through Alibaba). Prefer
   `deepseek-official` — the resold copies lose the off-peak discount.
+- A local LiteLLM routing proxy (`dsh-routing`, private repo) runs at
+  `http://localhost:4000/v1`, exposed to dsh as the virtual model
+  `smart-router`. Usage caveats for it are in the `model-routing` role —
+  enable that role rather than repeating them here.
